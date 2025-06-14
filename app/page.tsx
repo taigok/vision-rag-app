@@ -61,8 +61,8 @@ function HomeContent() {
           <h2 className="text-4xl font-bold tracking-tight mb-4">
             AI-Powered Document Search
           </h2>
-          <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-            Upload PDFs or PowerPoint files and search their content with advanced AI
+          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+            Upload your documents and search their content with AI - it's that simple
           </p>
         </div>
       </section>
@@ -71,12 +71,52 @@ function HomeContent() {
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
         <div className="grid gap-8">
-          {/* Search Section */}
+          {/* Step 1: Upload & Document Management */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center gap-2">
+              <CardTitle className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                  1
+                </div>
+                <Upload className="h-5 w-5" />
+                Upload & Manage Documents
+              </CardTitle>
+              <CardDescription>
+                Upload PDF or PowerPoint files (up to 50MB each) and view your document library
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid lg:grid-cols-2 gap-8">
+                {/* Upload Area */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <Upload className="h-4 w-4" />
+                    Upload New Document
+                  </h3>
+                  <FileUpload onUploadComplete={handleUploadComplete} />
+                </div>
+                
+                {/* Documents List */}
+                <div>
+                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                    <FileText className="h-4 w-4" />
+                    Your Documents
+                  </h3>
+                  <DocumentList key={refreshKey} />
+                </div>
+              </div>
+            </CardContent>
+          </Card>
+
+          {/* Step 2: Search Section */}
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-3">
+                <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                  2
+                </div>
                 <Search className="h-5 w-5" />
-                Search Documents
+                Search Your Documents
               </CardTitle>
               <CardDescription>
                 Ask questions about your uploaded documents and get AI-powered answers
@@ -86,41 +126,6 @@ function HomeContent() {
               <SearchInterface />
             </CardContent>
           </Card>
-
-          {/* Two column layout for upload and documents */}
-          <div className="grid lg:grid-cols-2 gap-8">
-            {/* Upload Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <Upload className="h-5 w-5" />
-                  Upload Document
-                </CardTitle>
-                <CardDescription>
-                  Support for PDF and PowerPoint files up to 50MB
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <FileUpload onUploadComplete={handleUploadComplete} />
-              </CardContent>
-            </Card>
-
-            {/* Documents Section */}
-            <Card>
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2">
-                  <FileText className="h-5 w-5" />
-                  Your Documents
-                </CardTitle>
-                <CardDescription>
-                  Manage your uploaded documents
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <DocumentList key={refreshKey} />
-              </CardContent>
-            </Card>
-          </div>
         </div>
       </main>
     </div>
