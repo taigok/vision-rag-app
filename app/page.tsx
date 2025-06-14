@@ -56,19 +56,19 @@ function HomeContent() {
       </header>
 
       {/* Hero Section */}
-      <section className="py-12">
+      <section className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-4xl font-bold tracking-tight mb-4">
+          <h2 className="text-3xl font-bold tracking-tight mb-3">
             AI-Powered Document Search
           </h2>
-          <p className="text-xl text-muted-foreground max-w-3xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
             Upload your documents and search their content with AI - it's that simple
           </p>
         </div>
       </section>
 
       {/* Main Content */}
-      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+      <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
 
         <div className="grid gap-8">
           {/* Step 1: Upload & Document Management */}
