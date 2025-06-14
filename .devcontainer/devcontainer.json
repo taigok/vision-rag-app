@@ -1,0 +1,23 @@
+{
+  "name": "Windsurf Dev Container",
+  "build": { "dockerfile": "Dockerfile" },
+  "remoteUser": "node",
+  "forwardPorts": [3000],
+  "features": {
+    "ghcr.io/devcontainers/features/node:1": {},
+    "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "codeium.windsurfpyright",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "ms-python.python",
+        "ms-python.pylint",
+        "vscode-icons-team.vscode-icons",
+        "github.github-vscode-theme"
+      ]
+    }
+  }
+}
