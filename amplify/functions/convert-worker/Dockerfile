@@ -1,6 +1,6 @@
 FROM --platform=linux/amd64 public.ecr.aws/lambda/python:3.12
 
-# Install system dependencies for PyMuPDF and pdf2image
+# Install system dependencies for PyMuPDF, pdf2image and PIL
 RUN dnf update -y && \
     dnf install -y \
     gcc \
@@ -8,6 +8,13 @@ RUN dnf update -y && \
     make \
     poppler-utils \
     poppler-cpp-devel \
+    libjpeg-turbo-devel \
+    zlib-devel \
+    freetype-devel \
+    lcms2-devel \
+    libwebp-devel \
+    tcl-devel \
+    tk-devel \
     && dnf clean all
 
 # Copy requirements first for better layer caching
