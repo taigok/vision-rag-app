@@ -1,0 +1,5 @@
+boto3
+pillow
+PyMuPDF==1.24.12
+pdf2image
+python-pptx

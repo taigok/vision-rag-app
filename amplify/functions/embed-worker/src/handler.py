@@ -107,7 +107,7 @@ def handler(event, context):
                 json.dump(metadata, f)
             
             # Upload to vector-files bucket
-            vector_bucket = os.environ['VECTOR_BUCKET']
+            vector_bucket = os.environ.get('VECTOR_BUCKET_NAME', os.environ.get('VECTOR_BUCKET', 'vector-files'))
             
             # Upload index
             index_key = f"private/{user_id}/{index_id}/index.index"

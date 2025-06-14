@@ -4,6 +4,8 @@ import tempfile
 import uuid
 from pathlib import Path
 import boto3
+import fitz  # PyMuPDF
+from pdf2image import convert_from_path
 from PIL import Image
 
 s3_client = boto3.client('s3')
@@ -46,12 +48,7 @@ def handler(event, context):
         images = []
         
         if file_extension == '.pdf':
-            print("PDF processing temporarily disabled - creating placeholder")
-            # Create placeholder image for PDF
-            placeholder_image = Image.new('RGB', (1920, 1080), color='white')
-            image_path = temp_path / "page_0001.png"
-            placeholder_image.save(image_path)
-            images = [image_path]
+            images = convert_pdf_to_images(input_file, temp_path)
         elif file_extension in ['.pptx', '.ppt']:
             images = convert_pptx_to_images(input_file, temp_path)
         else:

@@ -1,4 +1,4 @@
-import { defineBackend } from '@aws-amplify/backend';
+import { defineBackend, secret } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { rawFiles, images, vectorFiles } from './storage/resource';
@@ -22,5 +22,8 @@ const backend = defineBackend({
   searchRouter,
 });
 
-// TODO: Add S3 triggers, EventBridge rules, and API Gateway after initial deployment
-// This will be configured in a separate step to avoid circular dependencies
+// TODO: Advanced configuration will be added step by step after basic deployment succeeds
+// - S3 triggers for automatic processing
+// - EventBridge scheduling for index merging
+// - REST API endpoint for search functionality
+// - IAM permissions for cross-bucket access
