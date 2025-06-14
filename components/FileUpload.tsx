@@ -78,7 +78,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       console.log('Upload succeeded:', result);
       
       if (onUploadComplete) {
-        onUploadComplete(result.key);
+        onUploadComplete(result.path);
       }
       
       // Reset state after successful upload

@@ -1,0 +1,5 @@
+boto3
+cohere>=5.0.0
+faiss-cpu>=1.7.0
+numpy>=1.24.0
+Pillow>=10.0.0

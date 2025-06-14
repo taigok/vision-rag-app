@@ -59,6 +59,15 @@ pytest tests/test_convert_worker.py
 pytest --cov=amplify/functions --cov-report=html tests/
 ```
 
+### Docker Container Management
+```bash
+# Rebuild and push convert-worker Lambda container image
+./scripts/rebuild-convert-worker.sh
+
+# Setup S3 event triggers for automatic processing
+./scripts/setup-s3-triggers.sh
+```
+
 ### Python Layer Building
 ```bash
 cd amplify/functions/layers/python-deps
@@ -71,7 +80,13 @@ cd amplify/functions/layers/python-deps
 All Lambda functions use custom CDK definitions with `defineFunction((scope) => ...)` pattern and `resourceGroupName: 'functions'` to prevent CloudFormation circular dependencies.
 
 ### S3 Triggers and Permissions
-S3 event triggers and IAM policies are intentionally commented out in `backend.ts` to avoid circular dependencies during initial deployment. These need to be configured separately after the base infrastructure is deployed.
+S3 event triggers are configured via `./scripts/setup-s3-triggers.sh` script to avoid CloudFormation circular dependencies. The script:
+- Adds Lambda permissions for S3 to invoke functions
+- Configures bucket notifications for PDF/PPTX → convert-worker
+- Configures bucket notifications for PNG → embed-worker
+
+### Container Image Deployment
+The convert-worker function uses ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler). Use `./scripts/rebuild-convert-worker.sh` to rebuild and push updated images.
 
 ### Environment Variables Required
 - `COHERE_API_KEY`: For embedding generation

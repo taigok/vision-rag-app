@@ -18,7 +18,8 @@ export const convertWorker = defineFunction((scope) => {
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      DEST_BUCKET: 'images',
+      DEST_BUCKET_NAME: 'images',
+      IMAGES_BUCKET: 'images',
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,

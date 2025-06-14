@@ -9,6 +9,7 @@ export const embedWorker = defineFunction((scope) => {
     code: Code.fromAsset('amplify/functions/embed-worker/src'),
     environment: {
       COHERE_API_KEY: process.env.COHERE_API_KEY || '',
+      VECTOR_BUCKET_NAME: 'vector-files',
       VECTOR_BUCKET: 'vector-files',
     },
     timeout: Duration.seconds(300),

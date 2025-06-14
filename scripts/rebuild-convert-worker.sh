@@ -25,8 +25,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PROJECT_ROOT="$(dirname "$SCRIPT_DIR")"
 cd "${PROJECT_ROOT}/amplify/functions/convert-worker"
 
-# Step 3: Build the Docker image for linux/amd64
-echo "🏗️  Building Docker image for linux/amd64..."
+# Step 3: Build the Docker image for linux/amd64 with cache
+echo "🏗️  Building Docker image for linux/amd64 (with cache)..."
 docker buildx build --platform linux/amd64 --provenance=false -t ${REPO_NAME}:latest --load .
 
 # Step 4: Tag the image for ECR
