@@ -31,7 +31,14 @@ cd "${PROJECT_ROOT}/amplify/functions/embed-worker"
 
 # Step 4: Build the Docker image for linux/amd64
 echo "🏗️  Building Docker image for linux/amd64..."
-docker buildx build --platform linux/amd64 --provenance=false -t ${REPO_NAME}:latest --load .
+# Load environment variables from .env file
+if [ -f "${PROJECT_ROOT}/.env" ]; then
+    export $(grep -v '^#' "${PROJECT_ROOT}/.env" | xargs)
+fi
+docker buildx build --platform linux/amd64 --provenance=false \
+    --build-arg COHERE_API_KEY="${COHERE_API_KEY}" \
+    --build-arg GEMINI_API_KEY="${GEMINI_API_KEY}" \
+    -t ${REPO_NAME}:latest --load .
 
 # Step 5: Tag the image for ECR
 echo "🏷️  Tagging image for ECR..."

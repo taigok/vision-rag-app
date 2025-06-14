@@ -35,16 +35,16 @@ export const embedWorker = defineFunction((scope) => {
     'embed-worker'
   );
 
-  return new Function(scope, 'EmbedWorker', {
+  return new Function(scope, 'EmbedWorkerV5', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      COHERE_API_KEY: process.env.COHERE_API_KEY || '',
-      VECTOR_BUCKET_NAME: 'vector-files',
-      VECTOR_BUCKET: 'vector-files',
+      VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
+      VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
+      CODE_VERSION: '8', // One index per document with all page vectors
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,

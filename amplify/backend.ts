@@ -2,7 +2,6 @@ import { defineBackend, secret } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { rawFiles, vectorFiles, convertWorker, embedWorker } from './storage/resource';
-import { indexMerger } from './functions/index-merger/resource';
 import { searchRouter } from './functions/search-router/resource';
 import { EventType } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
@@ -17,7 +16,6 @@ const backend = defineBackend({
   vectorFiles,
   convertWorker,
   embedWorker,
-  indexMerger,
   searchRouter,
 });
 
@@ -31,9 +29,9 @@ rawFilesBucket.grantWrite(backend.convertWorker.resources.lambda);  // Allow wri
 rawFilesBucket.grantRead(backend.embedWorker.resources.lambda);   // Read images from same bucket
 vectorFilesBucket.grantWrite(backend.embedWorker.resources.lambda);
 
-// Grant permissions for other functions in functions resourceGroup
-vectorFilesBucket.grantRead(backend.indexMerger.resources.lambda);
-vectorFilesBucket.grantWrite(backend.indexMerger.resources.lambda);
+// Grant permissions for search-router
+vectorFilesBucket.grantRead(backend.searchRouter.resources.lambda);
+rawFilesBucket.grantRead(backend.searchRouter.resources.lambda);
 
 // Configure S3 event notifications
 

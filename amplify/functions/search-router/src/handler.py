@@ -17,11 +17,9 @@ cohere_client = cohere.Client(os.environ.get('COHERE_API_KEY', ''))
 # Configure Gemini
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
 
-# Global variables for caching
+# Global variables for caching (disabled for real-time search)
 cached_index = None
 cached_metadata = None
-cached_index_path = '/tmp/latest.index'
-cached_meta_path = '/tmp/latest-meta.json'
 
 def handler(event, context):
     """
@@ -51,13 +49,13 @@ def handler(event, context):
     top_k = body.get('topK', 5)
     
     try:
-        # Load or download the index
-        index, metadata = load_or_download_index()
+        # Load and merge all individual indexes in real-time
+        index, metadata = load_and_merge_indexes_realtime()
         
         if index is None or index.ntotal == 0:
             return {
                 'statusCode': 404,
-                'body': json.dumps({'error': 'No index available for search'})
+                'body': json.dumps({'error': 'No documents indexed yet'})
             }
         
         # Generate query embedding
@@ -146,51 +144,121 @@ def handler(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
-def load_or_download_index():
-    """Load index from cache or download from S3"""
-    global cached_index, cached_metadata
-    
-    # Check if cached files exist
-    if os.path.exists(cached_index_path) and os.path.exists(cached_meta_path):
-        try:
-            # Load from cache
-            cached_index = faiss.read_index(cached_index_path)
-            with open(cached_meta_path, 'r') as f:
-                cached_metadata = json.load(f)
-            print("Loaded index from cache")
-            return cached_index, cached_metadata
-        except Exception as e:
-            print(f"Error loading cached index: {e}")
-    
-    # Download from S3
+def load_and_merge_indexes_realtime():
+    """Load and merge all individual indexes in real-time"""
     vector_bucket = os.environ['VECTOR_BUCKET']
     
-    try:
-        # Download index
-        s3_client.download_file(
-            vector_bucket,
-            'private/master/latest.index',
-            cached_index_path
-        )
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
         
-        # Download metadata
-        s3_client.download_file(
-            vector_bucket,
-            'private/master/latest-meta.json',
-            cached_meta_path
-        )
+        # List all individual index files
+        all_indexes = []
         
-        # Load index
-        cached_index = faiss.read_index(cached_index_path)
-        with open(cached_meta_path, 'r') as f:
-            cached_metadata = json.load(f)
-        
-        print(f"Downloaded and loaded index with {cached_index.ntotal} vectors")
-        return cached_index, cached_metadata
-        
-    except Exception as e:
-        print(f"Error downloading index: {e}")
-        return None, None
+        try:
+            # Paginate through all objects in the vector bucket
+            paginator = s3_client.get_paginator('list_objects_v2')
+            pages = paginator.paginate(
+                Bucket=vector_bucket,
+                Prefix='private/'
+            )
+            
+            for page in pages:
+                if 'Contents' not in page:
+                    continue
+                
+                for obj in page['Contents']:
+                    key = obj['Key']
+                    
+                    # Skip master index files (if any exist)
+                    if 'master/' in key:
+                        continue
+                    
+                    # Look for index.index files
+                    if key.endswith('/index.index'):
+                        # Extract the corresponding meta.json path
+                        meta_key = key.replace('/index.index', '/meta.json')
+                        
+                        all_indexes.append({
+                            'index_key': key,
+                            'meta_key': meta_key,
+                            'last_modified': obj['LastModified']
+                        })
+            
+            if not all_indexes:
+                print("No indexes found")
+                return None, None
+            
+            print(f"Found {len(all_indexes)} indexes to merge")
+            
+            # Create master index
+            dimension = 1024  # Cohere embed dimension
+            master_index = faiss.IndexFlatL2(dimension)
+            master_metadata = {
+                'documents': {},
+                'merged_count': 0
+            }
+            
+            # Download and merge each index
+            for idx_info in all_indexes:
+                try:
+                    # Download index
+                    index_path = temp_path / f"temp_{master_metadata['merged_count']}.index"
+                    s3_client.download_file(vector_bucket, idx_info['index_key'], str(index_path))
+                    
+                    # Download metadata
+                    meta_path = temp_path / f"temp_{master_metadata['merged_count']}.json"
+                    s3_client.download_file(vector_bucket, idx_info['meta_key'], str(meta_path))
+                    
+                    # Load index
+                    temp_index = faiss.read_index(str(index_path))
+                    
+                    # Load metadata
+                    with open(meta_path, 'r') as f:
+                        temp_meta = json.load(f)
+                    
+                    # Get current size of master index
+                    offset = master_index.ntotal
+                    
+                    # Merge vectors
+                    if temp_index.ntotal > 0:
+                        # Extract vectors from temp index
+                        vectors = np.zeros((temp_index.ntotal, dimension), dtype='float32')
+                        for i in range(temp_index.ntotal):
+                            vectors[i] = temp_index.reconstruct(i)
+                        
+                        # Add to master index
+                        master_index.add(vectors)
+                        
+                        # Update metadata
+                        doc_id = temp_meta.get('document_id', 'unknown')
+                        
+                        # Update image metadata with new index positions
+                        updated_images = []
+                        for img in temp_meta.get('images', []):
+                            updated_img = img.copy()
+                            updated_img['global_index'] = offset + img['index']
+                            updated_images.append(updated_img)
+                        
+                        master_metadata['documents'][doc_id] = {
+                            'user_id': temp_meta.get('user_id'),
+                            'images': updated_images,
+                            'original_index': idx_info['index_key']
+                        }
+                        
+                        master_metadata['merged_count'] += 1
+                        
+                    print(f"Merged index from {idx_info['index_key']} ({temp_index.ntotal} vectors)")
+                    
+                except Exception as e:
+                    print(f"Error merging index {idx_info['index_key']}: {e}")
+                    continue
+            
+            print(f"Real-time merge complete: {master_index.ntotal} vectors from {master_metadata['merged_count']} documents")
+            return master_index, master_metadata
+            
+        except Exception as e:
+            print(f"Error during real-time merge: {e}")
+            return None, None
 
 def generate_text_embedding(text):
     """Generate embedding for text query using Cohere"""
