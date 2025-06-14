@@ -73,17 +73,19 @@ const api = new RestApi(stack, 'VisionRAGApi', {
   description: 'API for searching documents with Vision RAG',
   defaultCorsPreflightOptions: {
     allowOrigins: Cors.ALL_ORIGINS,
-    allowMethods: Cors.ALL_METHODS,
-    allowHeaders: ['Content-Type', 'Authorization'],
+    allowMethods: ['GET', 'POST', 'OPTIONS'],
+    allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
+    allowCredentials: false,
   },
 });
 
 // Add search endpoint
 const searchResource = api.root.addResource('search');
+
 searchResource.addMethod(
   'POST',
   new LambdaIntegration(backend.searchRouter.resources.lambda, {
-    requestTemplates: { 'application/json': '{ "statusCode": "200" }' }
+    proxy: true,
   })
 );
 

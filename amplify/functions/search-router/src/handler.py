@@ -28,6 +28,19 @@ def handler(event, context):
     """
     print(f"Event: {json.dumps(event)}")
     
+    # Handle CORS preflight request
+    if event.get('httpMethod') == 'OPTIONS':
+        return {
+            'statusCode': 200,
+            'headers': {
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                'Access-Control-Allow-Credentials': 'false'
+            },
+            'body': ''
+        }
+    
     # Parse request body
     try:
         body = json.loads(event.get('body', '{}'))
@@ -137,7 +150,9 @@ def handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*'
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
             },
             'body': json.dumps(response_data)
         }
@@ -146,6 +161,12 @@ def handler(event, context):
         print(f"Error in search: {e}")
         return {
             'statusCode': 500,
+            'headers': {
+                'Content-Type': 'application/json',
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
+            },
             'body': json.dumps({'error': str(e)})
         }
 
@@ -340,10 +361,26 @@ def generate_answer_with_gemini(query, images):
         model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Prepare prompt
-        prompt = f"""Based on the following images, please answer this question: {query}
-        
-        Please provide a comprehensive answer based on what you can see in the images.
-        If the images don't contain relevant information, please indicate that."""
+        prompt = f"""あなたは文書ページを分析してユーザーの質問に答えるAIアシスタントです。
+
+ユーザーの質問: {query}
+
+指示事項:
+1. 提供されたすべての文書ページを注意深く確認してください
+2. ユーザーの質問に関連する情報を抽出してください
+3. 文書から具体的な詳細を含む、明確で構造化された回答を提供してください
+4. グラフ、表、図がある場合は、関連性があればその内容を説明してください
+5. 明確性のために、適切な場合は箇条書きや番号付きリストを使用してください
+6. 文書に関連情報が含まれていない場合は、その旨を明確に述べてください
+
+重要事項:
+- 文書に直接表示されている情報を具体的に引用してください
+- 画像に表示されている以上の推測は避けてください
+- テキストが不明瞭または部分的にしか見えない場合は、その制限について言及してください
+- プロフェッショナルで親切な口調を保ってください
+- 必ず日本語で回答してください
+
+以下に表示される文書ページに基づいて回答してください:"""
         
         # Create content with images
         content = [prompt]

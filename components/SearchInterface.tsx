@@ -3,11 +3,8 @@
 import { useState } from 'react';
 import { Search, Loader2, FileImage, AlertCircle, X, ZoomIn } from 'lucide-react';
 import { generateClient } from 'aws-amplify/api';
-import { Amplify } from 'aws-amplify';
 import { getUrl } from 'aws-amplify/storage';
 import outputs from '@/amplify_outputs.json';
-
-Amplify.configure(outputs);
 
 interface SearchResult {
   answer: string;
@@ -41,6 +38,9 @@ export default function SearchInterface() {
         throw new Error('API endpoint not configured');
       }
 
+      console.log('API Endpoint:', apiEndpoint);
+      console.log('Full URL:', `${apiEndpoint}search`);
+
       // Get current auth session for API authentication if needed
       const response = await fetch(`${apiEndpoint}search`, {
         method: 'POST',
@@ -62,7 +62,12 @@ export default function SearchInterface() {
       setResults(data);
     } catch (err) {
       console.error('Search error:', err);
-      setError(err instanceof Error ? err.message : 'Search failed');
+      
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        setError('Network error: Unable to connect to the search API. Please check if the backend is deployed.');
+      } else {
+        setError(err instanceof Error ? err.message : 'Search failed');
+      }
     } finally {
       setLoading(false);
     }
@@ -141,10 +146,27 @@ export default function SearchInterface() {
                       className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
                       onClick={async () => {
                         try {
+                          // Parse the key to determine access level
+                          // Format: images/public/{docId}/page_X.png or images/private/{userId}/{docId}/page_X.png
+                          let storageKey = source.key;
+                          let accessLevel: 'guest' | 'private' = 'guest';
+                          
+                          if (source.key.startsWith('images/')) {
+                            storageKey = source.key.substring(7); // Remove 'images/' prefix
+                          }
+                          
+                          // For public files, remove the 'public/' prefix as well
+                          if (storageKey.startsWith('public/')) {
+                            storageKey = storageKey.substring(7); // Remove 'public/' prefix
+                            accessLevel = 'guest';
+                          } else if (storageKey.startsWith('private/')) {
+                            accessLevel = 'private';
+                          }
+                          
                           const result = await getUrl({
-                            key: source.key,
+                            key: storageKey,
                             options: {
-                              accessLevel: 'guest',
+                              accessLevel: accessLevel,
                               expiresIn: 3600,
                             },
                           });

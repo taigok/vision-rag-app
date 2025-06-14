@@ -10,7 +10,7 @@ export const searchRouter = defineFunction((scope) => {
     'search-router'
   );
 
-  return new Function(scope, 'SearchRouter', {
+  return new Function(scope, 'SearchRouterV3', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
@@ -19,6 +19,7 @@ export const searchRouter = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       RAW_FILES_BUCKET: 'amplify-visionragapp-node-s-rawfilesbucketb0479f06-w1m4dpdutqq3',
+      CODE_VERSION: '5', // Fixed CORS for localhost development
     },
     timeout: Duration.seconds(60),
     memorySize: 1024,
