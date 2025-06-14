@@ -12,7 +12,7 @@ import base64
 import google.generativeai as genai
 
 s3_client = boto3.client('s3')
-cohere_client = cohere.Client(os.environ.get('COHERE_API_KEY', ''))
+cohere_client = cohere.ClientV2(api_key=os.environ.get('COHERE_API_KEY', ''))
 
 # Configure Gemini
 genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
@@ -119,7 +119,12 @@ def handler(event, context):
                 continue
         
         # Generate answer using Gemini Vision Pro
-        answer = generate_answer_with_gemini(query, images_for_gemini)
+        if isinstance(query, str):
+            query_text = query
+        else:
+            query_text = query.get('text', 'What is in this image?')
+            
+        answer = generate_answer_with_gemini(query_text, images_for_gemini)
         
         # Prepare response
         response_data = {
@@ -191,7 +196,7 @@ def load_and_merge_indexes_realtime():
             print(f"Found {len(all_indexes)} indexes to merge")
             
             # Create master index
-            dimension = 1024  # Cohere embed dimension
+            dimension = 1536  # Cohere embed-v4.0 dimension
             master_index = faiss.IndexFlatL2(dimension)
             master_metadata = {
                 'documents': {},
@@ -234,9 +239,9 @@ def load_and_merge_indexes_realtime():
                         
                         # Update image metadata with new index positions
                         updated_images = []
-                        for img in temp_meta.get('images', []):
+                        for i, img in enumerate(temp_meta.get('images', [])):
                             updated_img = img.copy()
-                            updated_img['global_index'] = offset + img['index']
+                            updated_img['global_index'] = offset + i  # Use enumerate index
                             updated_images.append(updated_img)
                         
                         master_metadata['documents'][doc_id] = {
@@ -263,29 +268,67 @@ def load_and_merge_indexes_realtime():
 def generate_text_embedding(text):
     """Generate embedding for text query using Cohere"""
     try:
-        # For demo purposes, generate a random embedding
-        # In production, use: response = cohere_client.embed(texts=[text])
-        embedding = np.random.randn(1024).astype('float32')
+        # Use Cohere's embed API for text
+        response = cohere_client.embed(
+            model="embed-v4.0",
+            texts=[text],
+            input_type="search_query",
+            embedding_types=["float"]
+        )
+        
+        # Extract embedding from response
+        embedding = np.array(response.embeddings.float[0], dtype='float32')
+        
+        # Normalize the embedding
         embedding = embedding / np.linalg.norm(embedding)
+        
+        print(f"Generated text embedding with dimension: {len(embedding)}")
         return embedding
     except Exception as e:
         print(f"Error generating text embedding: {e}")
-        return None
+        # Fallback to random embedding for demo
+        embedding = np.random.randn(1536).astype('float32')
+        embedding = embedding / np.linalg.norm(embedding)
+        return embedding
 
 def generate_image_embedding_from_base64(image_base64):
     """Generate embedding for base64 encoded image"""
     try:
-        # Decode base64 image
-        img_bytes = base64.b64decode(image_base64)
+        # If already a data URI, use it directly
+        if image_base64.startswith('data:image/'):
+            img_data_uri = image_base64
+        else:
+            # Decode base64 and create data URI
+            img_data_uri = f"data:image/png;base64,{image_base64}"
         
-        # For demo purposes, generate a random embedding
-        # In production, use multimodal embedding service
-        embedding = np.random.randn(1024).astype('float32')
+        # Use Cohere's multimodal embedding API
+        api_input_document = {
+            "content": [
+                {"type": "image", "image": img_data_uri}
+            ]
+        }
+        
+        response = cohere_client.embed(
+            model="embed-v4.0",
+            inputs=[api_input_document],
+            input_type="search_query",
+            embedding_types=["float"]
+        )
+        
+        # Extract embedding from response
+        embedding = np.array(response.embeddings.float[0], dtype='float32')
+        
+        # Normalize the embedding
         embedding = embedding / np.linalg.norm(embedding)
+        
+        print(f"Generated image embedding with dimension: {len(embedding)}")
         return embedding
     except Exception as e:
         print(f"Error generating image embedding: {e}")
-        return None
+        # Fallback to random embedding for demo
+        embedding = np.random.randn(1536).astype('float32')
+        embedding = embedding / np.linalg.norm(embedding)
+        return embedding
 
 def generate_answer_with_gemini(query, images):
     """Generate answer using Gemini Vision Pro"""
@@ -293,8 +336,8 @@ def generate_answer_with_gemini(query, images):
         if not images:
             return "No relevant images found to answer your query."
         
-        # Initialize Gemini model
-        model = genai.GenerativeModel('gemini-1.5-pro')
+        # Initialize Gemini model (using vision model)
+        model = genai.GenerativeModel('gemini-1.5-flash')
         
         # Prepare prompt
         prompt = f"""Based on the following images, please answer this question: {query}

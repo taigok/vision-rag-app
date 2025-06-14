@@ -4,6 +4,7 @@ import { useState } from 'react';
 import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
 import FileUpload from '@/components/FileUpload';
 import DocumentList from '@/components/DocumentList';
+import SearchInterface from '@/components/SearchInterface';
 
 function HomeContent() {
   const { user, signOut } = useAuthenticator((context) => [context.user, context.signOut]);
@@ -43,6 +44,17 @@ function HomeContent() {
         </div>
 
         <div className="space-y-12">
+          {/* Search Section */}
+          <section>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">
+              Search Documents
+            </h2>
+            <SearchInterface />
+          </section>
+
+          {/* Divider */}
+          <div className="border-t border-gray-200 dark:border-gray-700" />
+
           {/* Upload Section */}
           <section>
             <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-6 text-center">

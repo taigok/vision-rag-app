@@ -1,0 +1,6 @@
+boto3
+cohere>=5.0.0
+faiss-cpu
+numpy
+Pillow
+google-generativeai
