@@ -17,12 +17,14 @@ The application follows a serverless pipeline architecture:
 5. **Search & Response** → `search-router` Lambda (Query → AI response)
 
 ### Storage Structure
-- `rawFiles` (default): Original PDF/PPTX uploads
-- `images`: Converted PNG images from documents  
+- `rawFiles` (default): Original PDF/PPTX uploads and converted images in single bucket
+  - `public/` - PDF/PPTX files uploaded by users
+  - `private/{userId}/` - User-specific uploads
+  - `images/{userId}/{docId}/` - Converted PNG images from documents
 - `vectorFiles`: Faiss indexes and metadata (versioned)
 
 ### Lambda Functions (Python 3.12)
-All functions are in the `functions` resource group to avoid circular dependencies:
+Convert-worker and embed-worker are in the `storage` resourceGroup to enable S3 triggers; other functions are in the `functions` resourceGroup:
 
 - **convert-worker**: Converts documents to images using PyMuPDF/pdf2image
 - **embed-worker**: Generates embeddings with Cohere, creates Faiss indexes
@@ -64,7 +66,10 @@ pytest --cov=amplify/functions --cov-report=html tests/
 # Rebuild and push convert-worker Lambda container image
 ./scripts/rebuild-convert-worker.sh
 
-# Setup S3 event triggers for automatic processing
+# Rebuild and push embed-worker Lambda container image
+./scripts/rebuild-embed-worker.sh
+
+# Setup S3 event triggers for automatic processing (deprecated - now uses Amplify native triggers)
 ./scripts/setup-s3-triggers.sh
 ```
 
@@ -77,16 +82,16 @@ cd amplify/functions/layers/python-deps
 ## Key Implementation Notes
 
 ### Function Definitions
-All Lambda functions use custom CDK definitions with `defineFunction((scope) => ...)` pattern and `resourceGroupName: 'functions'` to prevent CloudFormation circular dependencies.
+All Lambda functions use custom CDK definitions with `defineFunction((scope) => ...)` pattern and `resourceGroupName: 'storage'` to prevent CloudFormation circular dependencies.
 
 ### S3 Triggers and Permissions
-S3 event triggers are configured via `./scripts/setup-s3-triggers.sh` script to avoid CloudFormation circular dependencies. The script:
-- Adds Lambda permissions for S3 to invoke functions
-- Configures bucket notifications for PDF/PPTX → convert-worker
-- Configures bucket notifications for PNG → embed-worker
+S3 event triggers are configured natively in Amplify using path-specific triggers in `amplify/storage/resource.ts`:
+- PDF/PPTX files in `public/` and `private/` folders trigger convert-worker
+- PNG files in `images/` folder trigger embed-worker
+- All functions use the same bucket with folder-based organization
 
 ### Container Image Deployment
-The convert-worker function uses ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler). Use `./scripts/rebuild-convert-worker.sh` to rebuild and push updated images.
+Both convert-worker and embed-worker functions use ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler, Cohere, Faiss). Use respective rebuild scripts to update images.
 
 ### Environment Variables Required
 - `COHERE_API_KEY`: For embedding generation
@@ -100,3 +105,28 @@ sys.path.insert(0, os.path.join(os.path.dirname(__file__), '../amplify/functions
 
 ### Asset References
 Lambda code assets use absolute paths: `'amplify/functions/[function-name]/src'` from project root.
+
+## Important Implementation Patterns
+
+### Single Bucket Architecture
+The system uses a single S3 bucket (`rawFiles`) with folder-based organization instead of separate buckets to avoid circular dependencies:
+- Original files: `public/` and `private/{userId}/`
+- Generated images: `images/{userId}/{docId}/`
+- This allows convert-worker to write images to the same bucket it reads from
+
+### Circular Dependency Resolution
+Three patterns identified for avoiding CloudFormation circular dependencies:
+- **Pattern A**: Move all related functions to same resourceGroup (`storage`)
+- **Pattern B**: Use EventBridge for loose coupling
+- **Pattern C**: Manual CLI configuration post-deployment
+
+Current implementation uses Pattern A with convert-worker and embed-worker in `storage` resourceGroup.
+
+### Image Processing Flow Control
+Convert-worker includes filtering logic to prevent recursive processing:
+```python
+if parts[0] == 'images':
+    print(f"Skipping image file: {source_key}")
+    return
+```
+This prevents convert-worker from processing its own generated images.
