@@ -4,6 +4,8 @@ import { data } from './data/resource';
 import { rawFiles, vectorFiles, convertWorker, embedWorker } from './storage/resource';
 import { indexMerger } from './functions/index-merger/resource';
 import { searchRouter } from './functions/search-router/resource';
+import { EventType } from 'aws-cdk-lib/aws-s3';
+import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -19,7 +21,7 @@ const backend = defineBackend({
   searchRouter,
 });
 
-// Grant necessary permissions for Lambda functions to access S3 buckets
+// Configure S3 event notifications for Lambda triggers
 const rawFilesBucket = backend.rawFiles.resources.bucket;
 const vectorFilesBucket = backend.vectorFiles.resources.bucket;
 
@@ -32,6 +34,37 @@ vectorFilesBucket.grantWrite(backend.embedWorker.resources.lambda);
 // Grant permissions for other functions in functions resourceGroup
 vectorFilesBucket.grantRead(backend.indexMerger.resources.lambda);
 vectorFilesBucket.grantWrite(backend.indexMerger.resources.lambda);
+
+// Configure S3 event notifications
+
+// PDF/PPTX files trigger convert-worker
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'public/', suffix: '.pdf' }
+);
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'private/', suffix: '.pdf' }
+);
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'public/', suffix: '.pptx' }
+);
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'private/', suffix: '.pptx' }
+);
+
+// Images trigger embed-worker
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.embedWorker.resources.lambda),
+  { prefix: 'images/' }
+);
 
 // TODO: Additional configuration to be added
 // - EventBridge scheduling for index merging

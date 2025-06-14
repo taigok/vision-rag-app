@@ -3,7 +3,7 @@ import { Function, Code, Runtime, Handler } from 'aws-cdk-lib/aws-lambda';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Duration } from 'aws-cdk-lib';
 
-// 画像変換ワーカー（同じresourceGroupに配置）
+// Define functions in storage resourceGroup for S3 triggers
 export const convertWorker = defineFunction((scope) => {
   const ecrRepo = Repository.fromRepositoryName(
     scope, 
@@ -11,14 +11,15 @@ export const convertWorker = defineFunction((scope) => {
     'convert-worker'
   );
 
-  return new Function(scope, 'ConvertWorkerV10', {
+  return new Function(scope, 'ConvertWorker', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      CODE_VERSION: '11',  // Force Lambda update
+      DEST_BUCKET_NAME: 'images',
+      IMAGES_BUCKET: 'images',
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,
@@ -27,11 +28,10 @@ export const convertWorker = defineFunction((scope) => {
   resourceGroupName: 'storage'
 });
 
-// ベクトル埋め込みワーカー（同じresourceGroupに配置）
 export const embedWorker = defineFunction((scope) => {
   const ecrRepo = Repository.fromRepositoryName(
-    scope,
-    'EmbedWorkerRepo',
+    scope, 
+    'EmbedWorkerRepo', 
     'embed-worker'
   );
 
@@ -42,8 +42,9 @@ export const embedWorker = defineFunction((scope) => {
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      VECTOR_BUCKET_NAME: 'vector-files',
       COHERE_API_KEY: process.env.COHERE_API_KEY || '',
+      VECTOR_BUCKET_NAME: 'vector-files',
+      VECTOR_BUCKET: 'vector-files',
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,
@@ -69,41 +70,6 @@ export const rawFiles = defineStorage({
       allow.guest.to(['read', 'write']) // Development only
     ],
   }),
-  triggers: {
-    onUpload: [
-      // PDF/PPTX files trigger convert-worker
-      {
-        function: convertWorker,
-        events: ['s3:ObjectCreated:*'],
-        prefix: 'public/',
-        suffix: '.pdf'
-      },
-      {
-        function: convertWorker,
-        events: ['s3:ObjectCreated:*'],
-        prefix: 'private/',
-        suffix: '.pdf'
-      },
-      {
-        function: convertWorker,
-        events: ['s3:ObjectCreated:*'],
-        prefix: 'public/',
-        suffix: '.pptx'
-      },
-      {
-        function: convertWorker,
-        events: ['s3:ObjectCreated:*'],
-        prefix: 'private/',
-        suffix: '.pptx'
-      },
-      // Images trigger embed-worker
-      {
-        function: embedWorker,
-        events: ['s3:ObjectCreated:*'],
-        prefix: 'images/'
-      }
-    ]
-  }
 });
 
 export const vectorFiles = defineStorage({

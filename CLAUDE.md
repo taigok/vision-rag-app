@@ -70,12 +70,6 @@ pytest --cov=amplify/functions --cov-report=html tests/
 ./scripts/rebuild-embed-worker.sh
 ```
 
-### Python Layer Building
-```bash
-cd amplify/functions/layers/python-deps
-./layer-build.sh     # Builds dependencies with Docker (requires faiss-cpu, cohere, etc.)
-```
-
 ## Key Implementation Notes
 
 ### Function Definitions
