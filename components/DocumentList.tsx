@@ -2,6 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { list, remove } from 'aws-amplify/storage';
+import { Card, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Document {
   key: string;
@@ -33,16 +39,13 @@ export default function DocumentList() {
     } catch (error) {
       console.error('Failed to fetch documents:', error);
       setError('Failed to load documents');
+      toast.error('Failed to load documents');
     } finally {
       setLoading(false);
     }
   };
 
   const handleDelete = async (key: string) => {
-    if (!confirm('Are you sure you want to delete this document?')) {
-      return;
-    }
-
     try {
       await remove({
         path: key,
@@ -50,9 +53,11 @@ export default function DocumentList() {
 
       // Refresh the list
       await fetchDocuments();
+      toast.success('Document deleted successfully');
     } catch (error) {
       console.error('Failed to delete document:', error);
       setError('Failed to delete document');
+      toast.error('Failed to delete document');
     }
   };
 
@@ -81,32 +86,36 @@ export default function DocumentList() {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <p className="text-gray-600 dark:text-gray-400">Loading documents...</p>
+        <p className="text-muted-foreground">Loading documents...</p>
       </div>
     );
   }
 
   if (error) {
     return (
-      <div className="text-center py-8">
-        <p className="text-red-600 dark:text-red-400">{error}</p>
-        <button
-          onClick={fetchDocuments}
-          className="mt-4 px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600"
-        >
-          Retry
-        </button>
+      <div className="space-y-4">
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
+        <div className="text-center">
+          <Button onClick={fetchDocuments}>
+            Retry
+          </Button>
+        </div>
       </div>
     );
   }
 
   if (documents.length === 0) {
     return (
-      <div className="text-center py-8">
-        <p className="text-gray-600 dark:text-gray-400">
-          No documents uploaded yet. Upload a PDF or PPTX file to get started.
-        </p>
-      </div>
+      <Card>
+        <CardContent className="text-center py-8">
+          <p className="text-muted-foreground">
+            No documents uploaded yet. Upload a PDF or PPTX file to get started.
+          </p>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -114,75 +123,65 @@ export default function DocumentList() {
     <div className="w-full">
       <div className="flex justify-between items-center mb-4">
         <h2 className="text-xl font-semibold">Uploaded Documents</h2>
-        <button
+        <Button
+          variant="ghost"
+          size="icon"
           onClick={fetchDocuments}
-          className="p-2 rounded hover:bg-gray-100 dark:hover:bg-gray-800"
           title="Refresh"
         >
-          <svg
-            className="w-5 h-5"
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-            />
-          </svg>
-        </button>
+          <RefreshCw className="h-4 w-4" />
+        </Button>
       </div>
 
       <div className="space-y-2">
         {documents.map((doc) => (
-          <div
-            key={doc.key}
-            className="flex items-center justify-between p-4 bg-white dark:bg-gray-800 rounded-lg shadow"
-          >
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {doc.key.endsWith('.pdf') ? (
-                  <svg className="w-8 h-8 text-red-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-5L9 2H4z" clipRule="evenodd" />
-                  </svg>
-                ) : (
-                  <svg className="w-8 h-8 text-orange-500" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M4 4a2 2 0 00-2 2v8a2 2 0 002 2h12a2 2 0 002-2V6a2 2 0 00-2-2h-5L9 2H4z" clipRule="evenodd" />
-                  </svg>
-                )}
+          <Card key={doc.key}>
+            <CardContent className="flex items-center justify-between p-4">
+              <div className="flex items-center space-x-3">
+                <div className="flex-shrink-0">
+                  {doc.key.endsWith('.pdf') ? (
+                    <FileText className="w-8 h-8 text-red-500" />
+                  ) : (
+                    <FileIcon className="w-8 h-8 text-orange-500" />
+                  )}
+                </div>
+                <div>
+                  <p className="font-medium">
+                    {doc.key.split('/').pop() || doc.key}
+                  </p>
+                  <p className="text-sm text-muted-foreground">
+                    {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
+                  </p>
+                </div>
               </div>
-              <div>
-                <p className="font-medium text-gray-900 dark:text-gray-100">
-                  {doc.key.split('/').pop() || doc.key}
-                </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
-                  {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
-                </p>
-              </div>
-            </div>
-            
-            <button
-              onClick={() => handleDelete(doc.key)}
-              className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 rounded"
-              title="Delete"
-            >
-              <svg
-                className="w-5 h-5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
-                />
-              </svg>
-            </button>
-          </div>
+              
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-destructive hover:text-destructive"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      Are you sure you want to delete this document? This action cannot be undone.
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogAction onClick={() => handleDelete(doc.key)}>
+                      Delete
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </CardContent>
+          </Card>
         ))}
       </div>
     </div>

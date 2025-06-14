@@ -5,6 +5,12 @@ import { Search, Loader2, FileImage, AlertCircle, X, ZoomIn } from 'lucide-react
 import { generateClient } from 'aws-amplify/api';
 import { getUrl } from 'aws-amplify/storage';
 import outputs from '@/amplify_outputs.json';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { toast } from 'sonner';
 
 interface SearchResult {
   answer: string;
@@ -67,6 +73,7 @@ export default function SearchInterface() {
         setError('Network error: Unable to connect to the search API. Please check if the backend is deployed.');
       } else {
         setError(err instanceof Error ? err.message : 'Search failed');
+        toast.error('Search failed. Please try again.');
       }
     } finally {
       setLoading(false);
@@ -76,74 +83,74 @@ export default function SearchInterface() {
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
       {/* Search Form */}
-      <form onSubmit={handleSearch} className="relative">
+      <form onSubmit={handleSearch}>
         <div className="flex gap-2">
           <div className="relative flex-1">
-            <input
+            <Input
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
               placeholder="Ask a question about your documents..."
-              className="w-full px-4 py-3 pr-12 border border-gray-300 dark:border-gray-600 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-gray-100 placeholder-gray-500 dark:placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:focus:ring-blue-400"
+              className="pr-10"
               disabled={loading}
             />
-            <Search className="absolute right-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
+            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           </div>
-          <button
+          <Button
             type="submit"
             disabled={loading || !query.trim()}
-            className="px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 disabled:bg-gray-400 disabled:cursor-not-allowed transition-colors flex items-center gap-2"
           >
             {loading ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 Searching...
               </>
             ) : (
               'Search'
             )}
-          </button>
+          </Button>
         </div>
       </form>
 
       {/* Error Message */}
       {error && (
-        <div className="bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg p-4 flex items-center gap-3">
-          <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0" />
-          <p className="text-red-700 dark:text-red-300">{error}</p>
-        </div>
+        <Alert variant="destructive">
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
 
       {/* Results */}
       {results && (
         <div className="space-y-6">
           {/* AI Answer */}
-          <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
-              AI Answer
-            </h3>
-            <div className="prose dark:prose-invert max-w-none">
-              <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">
+          <Card>
+            <CardHeader>
+              <CardTitle>AI Answer</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <p className="text-muted-foreground whitespace-pre-wrap">
                 {results.answer}
               </p>
-            </div>
-          </div>
+            </CardContent>
+          </Card>
 
           {/* Source Documents */}
           {results.sources.length > 0 && (
-            <div className="bg-white dark:bg-gray-800 rounded-lg shadow-md p-6">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
-                Source Documents ({results.totalResults})
-              </h3>
-              <div className="space-y-3">
+            <Card>
+              <CardHeader>
+                <CardTitle>Source Documents</CardTitle>
+                <CardDescription>Found {results.totalResults} relevant documents</CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-3">
                 {results.sources.map((source, index) => {
                   const pageMatch = source.key.match(/page_(\d+)\.png$/);
                   const pageNum = pageMatch ? pageMatch[1] : 'unknown';
                   
                   return (
-                    <div
+                    <Card
                       key={index}
-                      className="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-700 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-600 transition-colors cursor-pointer"
+                      className="cursor-pointer hover:bg-accent transition-colors"
                       onClick={async () => {
                         try {
                           // Parse the key to determine access level
@@ -176,59 +183,48 @@ export default function SearchInterface() {
                         }
                       }}
                     >
-                      <FileImage className="w-5 h-5 text-gray-500 dark:text-gray-400 flex-shrink-0" />
-                      <div className="flex-1">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100">
-                          Document: {source.document_id.substring(0, 8)}...
-                        </p>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
-                          Page {pageNum} • Score: {source.score.toFixed(3)}
-                        </p>
-                      </div>
-                      <ZoomIn className="w-4 h-4 text-gray-400" />
-                    </div>
+                      <CardContent className="flex items-center gap-3 p-3">
+                        <FileImage className="w-5 h-5 text-muted-foreground flex-shrink-0" />
+                        <div className="flex-1">
+                          <p className="text-sm font-medium">
+                            Document: {source.document_id.substring(0, 8)}...
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Page {pageNum} • Score: {source.score.toFixed(3)}
+                          </p>
+                        </div>
+                        <ZoomIn className="w-4 h-4 text-muted-foreground" />
+                      </CardContent>
+                    </Card>
                   );
                 })}
-              </div>
-            </div>
+              </CardContent>
+            </Card>
           )}
 
           {/* No Results */}
           {results.sources.length === 0 && (
-            <div className="bg-gray-50 dark:bg-gray-800 rounded-lg p-6 text-center">
-              <p className="text-gray-600 dark:text-gray-400">
-                No relevant documents found for your query.
-              </p>
-            </div>
+            <Card>
+              <CardContent className="text-center py-8">
+                <p className="text-muted-foreground">
+                  No relevant documents found for your query.
+                </p>
+              </CardContent>
+            </Card>
           )}
         </div>
       )}
 
       {/* Image Modal */}
-      {selectedImage && (
-        <div 
-          className="fixed inset-0 bg-black bg-opacity-75 z-50 flex items-center justify-center p-4"
-          onClick={() => setSelectedImage(null)}
-        >
-          <div className="relative max-w-5xl max-h-[90vh] bg-white dark:bg-gray-800 rounded-lg p-2">
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                setSelectedImage(null);
-              }}
-              className="absolute top-4 right-4 p-2 bg-white dark:bg-gray-800 rounded-full shadow-lg hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors z-10"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <img
-              src={selectedImage}
-              alt="Document page"
-              className="max-w-full max-h-[85vh] object-contain rounded"
-              onClick={(e) => e.stopPropagation()}
-            />
-          </div>
-        </div>
-      )}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-5xl max-h-[90vh] p-2">
+          <img
+            src={selectedImage || ''}
+            alt="Document page"
+            className="max-w-full max-h-[85vh] object-contain rounded"
+          />
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

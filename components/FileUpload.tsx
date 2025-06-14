@@ -2,6 +2,11 @@
 
 import { useState, useCallback } from 'react';
 import { uploadData } from 'aws-amplify/storage';
+import { Card } from '@/components/ui/card';
+import { Progress } from '@/components/ui/progress';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { toast } from 'sonner';
+import { Upload } from 'lucide-react';
 
 interface FileUploadProps {
   onUploadComplete?: (key: string) => void;
@@ -81,6 +86,9 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         onUploadComplete(result.path);
       }
       
+      // Show success toast
+      toast.success('File uploaded successfully!');
+      
       // Reset state after successful upload
       setTimeout(() => {
         setIsUploading(false);
@@ -88,7 +96,9 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       }, 1000);
     } catch (error) {
       console.error('Upload failed:', error);
-      setError('Upload failed. Please try again.');
+      const errorMessage = 'Upload failed. Please try again.';
+      setError(errorMessage);
+      toast.error(errorMessage);
       setIsUploading(false);
       setUploadProgress(0);
     }
@@ -96,21 +106,17 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
 
   return (
     <div className="w-full max-w-xl mx-auto">
-      <form
+      <Card
+        className={`relative border-2 border-dashed p-8 transition-colors ${
+          dragActive
+            ? 'border-primary bg-primary/5'
+            : 'border-muted-foreground/25'
+        } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
         onDragEnter={handleDrag}
-        onSubmit={(e) => e.preventDefault()}
+        onDragLeave={handleDrag}
+        onDragOver={handleDrag}
+        onDrop={handleDrop}
       >
-        <div
-          className={`relative border-2 border-dashed rounded-lg p-8 transition-colors ${
-            dragActive
-              ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
-              : 'border-gray-300 dark:border-gray-700'
-          } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
-          onDragEnter={handleDrag}
-          onDragLeave={handleDrag}
-          onDragOver={handleDrag}
-          onDrop={handleDrop}
-        >
           <input
             type="file"
             id="file-upload"
@@ -124,51 +130,32 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             htmlFor="file-upload"
             className="flex flex-col items-center justify-center cursor-pointer"
           >
-            <svg
-              className="w-12 h-12 mb-4 text-gray-400"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
-              />
-            </svg>
+            <Upload className="w-12 h-12 mb-4 text-muted-foreground" />
             
-            <p className="mb-2 text-sm text-gray-600 dark:text-gray-400">
+            <p className="mb-2 text-sm text-muted-foreground">
               <span className="font-semibold">Click to upload</span> or drag and drop
             </p>
-            <p className="text-xs text-gray-500 dark:text-gray-500">
+            <p className="text-xs text-muted-foreground">
               PDF or PPTX (MAX. 50MB)
             </p>
           </label>
+      </Card>
 
-          {/* Progress bar */}
-          {isUploading && (
-            <div className="absolute inset-x-0 bottom-0 h-1 bg-gray-200 rounded-b-lg overflow-hidden">
-              <div
-                className="h-full bg-blue-500 transition-all duration-300"
-                style={{ width: `${uploadProgress}%` }}
-              />
-            </div>
-          )}
-        </div>
-      </form>
-
-      {/* Status messages */}
+      {/* Progress bar */}
       {isUploading && (
-        <p className="mt-4 text-sm text-center text-gray-600 dark:text-gray-400">
-          Uploading... {uploadProgress}%
-        </p>
+        <div className="mt-4">
+          <Progress value={uploadProgress} className="w-full" />
+          <p className="mt-2 text-sm text-center text-muted-foreground">
+            Uploading... {uploadProgress}%
+          </p>
+        </div>
       )}
-      
+
+      {/* Error message */}
       {error && (
-        <p className="mt-4 text-sm text-center text-red-600 dark:text-red-400">
-          {error}
-        </p>
+        <Alert variant="destructive" className="mt-4">
+          <AlertDescription>{error}</AlertDescription>
+        </Alert>
       )}
     </div>
   );
