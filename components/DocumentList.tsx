@@ -15,7 +15,11 @@ interface Document {
   lastModified?: Date;
 }
 
-export default function DocumentList() {
+interface DocumentListProps {
+  refreshTrigger?: number;
+}
+
+export default function DocumentList({ refreshTrigger }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,14 +29,21 @@ export default function DocumentList() {
       setLoading(true);
       // List files in the public folder  
       const result = await list({
-        prefix: `public/`,
+        path: `public/`,
+        options: {
+          listAll: true
+        }
       });
 
-      const docs = result.items.map(item => ({
-        key: item.key,
-        size: item.size,
-        lastModified: item.lastModified,
-      }));
+      console.log('Storage list result:', result);
+      
+      const docs = result.items
+        .filter(item => item.path && item.path !== 'public/') // Filter out folder entries
+        .map(item => ({
+          key: item.path,
+          size: item.size,
+          lastModified: item.lastModified,
+        }));
 
       setDocuments(docs);
       setError(null);
@@ -63,7 +74,7 @@ export default function DocumentList() {
 
   useEffect(() => {
     fetchDocuments();
-  }, []);
+  }, [refreshTrigger]);
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return 'Unknown size';

@@ -102,7 +102,7 @@ function HomeContent() {
                     <FileText className="h-4 w-4" />
                     Your Documents
                   </h3>
-                  <DocumentList key={refreshKey} />
+                  <DocumentList refreshTrigger={refreshKey} />
                 </div>
               </div>
             </CardContent>
