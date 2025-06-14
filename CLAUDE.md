@@ -68,9 +68,6 @@ pytest --cov=amplify/functions --cov-report=html tests/
 
 # Rebuild and push embed-worker Lambda container image
 ./scripts/rebuild-embed-worker.sh
-
-# Setup S3 event triggers for automatic processing (deprecated - now uses Amplify native triggers)
-./scripts/setup-s3-triggers.sh
 ```
 
 ### Python Layer Building
