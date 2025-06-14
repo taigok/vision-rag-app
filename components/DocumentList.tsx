@@ -109,20 +109,17 @@ export default function DocumentList() {
 
   if (documents.length === 0) {
     return (
-      <Card>
-        <CardContent className="text-center py-8">
-          <p className="text-muted-foreground">
-            No documents uploaded yet. Upload a PDF or PPTX file to get started.
-          </p>
-        </CardContent>
-      </Card>
+      <div className="text-center py-8">
+        <p className="text-muted-foreground">
+          No documents uploaded yet.
+        </p>
+      </div>
     );
   }
 
   return (
     <div className="w-full">
-      <div className="flex justify-between items-center mb-4">
-        <h2 className="text-xl font-semibold">Uploaded Documents</h2>
+      <div className="flex justify-end mb-4">
         <Button
           variant="ghost"
           size="icon"
@@ -135,25 +132,24 @@ export default function DocumentList() {
 
       <div className="space-y-2">
         {documents.map((doc) => (
-          <Card key={doc.key}>
-            <CardContent className="flex items-center justify-between p-4">
-              <div className="flex items-center space-x-3">
-                <div className="flex-shrink-0">
-                  {doc.key.endsWith('.pdf') ? (
-                    <FileText className="w-8 h-8 text-red-500" />
-                  ) : (
-                    <FileIcon className="w-8 h-8 text-orange-500" />
-                  )}
-                </div>
-                <div>
-                  <p className="font-medium">
-                    {doc.key.split('/').pop() || doc.key}
-                  </p>
-                  <p className="text-sm text-muted-foreground">
-                    {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
-                  </p>
-                </div>
+          <div key={doc.key} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+            <div className="flex items-center space-x-3">
+              <div className="flex-shrink-0">
+                {doc.key.endsWith('.pdf') ? (
+                  <FileText className="w-6 h-6 text-red-500" />
+                ) : (
+                  <FileIcon className="w-6 h-6 text-orange-500" />
+                )}
               </div>
+              <div>
+                <p className="font-medium text-sm">
+                  {doc.key.split('/').pop() || doc.key}
+                </p>
+                <p className="text-xs text-muted-foreground">
+                  {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
+                </p>
+              </div>
+            </div>
               
               <AlertDialog>
                 <AlertDialogTrigger asChild>
@@ -180,8 +176,7 @@ export default function DocumentList() {
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
-            </CardContent>
-          </Card>
+          </div>
         ))}
       </div>
     </div>
