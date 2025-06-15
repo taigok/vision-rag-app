@@ -49,6 +49,9 @@ function HomeContent() {
               </div>
             </div>
             <div className="flex items-center gap-2">
+              <div className="text-xs text-muted-foreground">
+                セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}
+              </div>
               <AlertDialog>
                 <AlertDialogTrigger asChild>
                   <Button
@@ -58,13 +61,13 @@ function HomeContent() {
                     className="h-auto px-3 py-1"
                   >
                     <Trash2 className="mr-2 h-3 w-3" />
-                    <span className="text-sm">全ファイル削除</span>
+                    <span className="text-sm">アップロード済みファイル削除</span>
                     {isResetting && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>全ファイルを削除</AlertDialogTitle>
+                    <AlertDialogTitle>アップロード済みファイルを削除</AlertDialogTitle>
                     <AlertDialogDescription>
                       アップロードしたすべてのファイルを削除しますか？
                       <br />
@@ -93,7 +96,7 @@ function HomeContent() {
                           削除中...
                         </>
                       ) : (
-                        '全ファイル削除'
+                        'アップロード済みファイル削除'
                       )}
                     </AlertDialogAction>
                   </AlertDialogFooter>
