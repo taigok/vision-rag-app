@@ -9,7 +9,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
 
@@ -36,6 +36,7 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
   const [error, setError] = useState<string | null>(null);
   const { sessionId } = useSession();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [sourceImages, setSourceImages] = useState<{[key: string]: string}>({});
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -79,6 +80,24 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
 
       const data: SearchResult = await response.json();
       setResults(data);
+
+      // Load source images
+      const imageUrls: {[key: string]: string} = {};
+      for (const source of data.sources) {
+        try {
+          const imageUrl = await getUrl({
+            path: source.key,
+            options: {
+              validateObjectExistence: false,
+              expiresIn: 3600, // 1 hour
+            },
+          });
+          imageUrls[source.key] = imageUrl.url.toString();
+        } catch (imageError) {
+          console.error('Failed to get source image URL:', imageError);
+        }
+      }
+      setSourceImages(imageUrls);
     } catch (err) {
       console.error('Search error:', err);
       
@@ -158,9 +177,9 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
 
       {/* Results */}
       {results && (
-        <div className="space-y-6">
+        <div className="grid lg:grid-cols-3 gap-6">
           {/* AI Answer */}
-          <Card>
+          <Card className="lg:col-span-2">
             <CardHeader>
               <CardTitle>AI回答</CardTitle>
             </CardHeader>
@@ -175,65 +194,74 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
           {results.sources.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Source Documents</CardTitle>
-                <CardDescription>Found {results.totalResults} relevant documents</CardDescription>
+                <CardTitle>参照画像</CardTitle>
+                <CardDescription>{results.totalResults}件</CardDescription>
               </CardHeader>
-              <CardContent className="space-y-3">
-                {results.sources.map((source, index) => {
-                  const pageMatch = source.key.match(/page_(\d+)\.png$/);
-                  const pageNum = pageMatch ? pageMatch[1] : 'unknown';
-                  
-                  return (
-                    <Card
-                      key={index}
-                      className="cursor-pointer hover:bg-accent transition-colors"
-                      onClick={async () => {
-                        try {
-                          // Parse the key to determine access level
-                          // Format: images/public/{docId}/page_X.png or images/private/{userId}/{docId}/page_X.png
-                          let storageKey = source.key;
-                          let accessLevel: 'guest' | 'private' = 'guest';
-                          
-                          if (source.key.startsWith('images/')) {
-                            storageKey = source.key.substring(7); // Remove 'images/' prefix
+              <CardContent>
+                <div className="space-y-3">
+                  {results.sources.map((source, index) => {
+                    console.log('Source key:', source.key, 'Document ID:', source.document_id); // Debug log
+                    const pageMatch = source.key.match(/page[_-]?(\d+)\.png$/i);
+                    const pageNum = pageMatch ? pageMatch[1] : (index + 1).toString();
+                    
+                    // Extract filename from document_id (which should be the original filename)
+                    // document_id format is usually the original filename without extension
+                    const fileName = source.document_id.includes('.') 
+                      ? source.document_id 
+                      : `${source.document_id}.pdf`;
+                    
+                    const imageUrl = sourceImages[source.key];
+                    
+                    return (
+                      <Card
+                        key={index}
+                        className="cursor-pointer hover:bg-accent transition-colors"
+                        onClick={() => {
+                          if (imageUrl) {
+                            setSelectedImage(imageUrl);
                           }
-                          
-                          // For public files, remove the 'public/' prefix as well
-                          if (storageKey.startsWith('public/')) {
-                            storageKey = storageKey.substring(7); // Remove 'public/' prefix
-                            accessLevel = 'guest';
-                          } else if (storageKey.startsWith('private/')) {
-                            accessLevel = 'private';
-                          }
-                          
-                          const result = await getUrl({
-                            key: storageKey,
-                            options: {
-                              accessLevel: accessLevel,
-                              expiresIn: 3600,
-                            },
-                          });
-                          setSelectedImage(result.url.toString());
-                        } catch (err) {
-                          console.error('Failed to get image URL:', err);
-                        }
-                      }}
-                    >
-                      <CardContent className="flex items-center gap-3 p-3">
-                        <FileImage className="w-5 h-5 text-muted-foreground flex-shrink-0" />
-                        <div className="flex-1">
-                          <p className="text-sm font-medium">
-                            Document: {source.document_id.substring(0, 8)}...
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            Page {pageNum} • Score: {source.score.toFixed(3)}
-                          </p>
-                        </div>
-                        <ZoomIn className="w-4 h-4 text-muted-foreground" />
-                      </CardContent>
-                    </Card>
-                  );
-                })}
+                        }}
+                      >
+                        <CardContent className="p-2">
+                          <div className="flex gap-2 items-center">
+                            {/* Small Image Preview */}
+                            <div className="flex-shrink-0">
+                              {imageUrl ? (
+                                <div className="relative w-12 h-16 rounded border bg-muted overflow-hidden">
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Page ${pageNum}`}
+                                    className="w-full h-full object-cover"
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+                                    <ZoomIn className="h-3 w-3 text-white" />
+                                  </div>
+                                </div>
+                              ) : (
+                                <div className="w-12 h-16 rounded border bg-muted flex items-center justify-center">
+                                  <FileImage className="w-4 h-4 text-muted-foreground" />
+                                </div>
+                              )}
+                            </div>
+                            
+                            {/* Compact Document Info */}
+                            <div className="flex-1 min-w-0">
+                              <p className="text-xs font-medium truncate">
+                                {fileName}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Page {pageNum}
+                              </p>
+                              <p className="text-xs text-muted-foreground">
+                                Score: {source.score.toFixed(2)}
+                              </p>
+                            </div>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    );
+                  })}
+                </div>
               </CardContent>
             </Card>
           )}
@@ -254,11 +282,14 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
       {/* Image Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
         <DialogContent className="max-w-5xl max-h-[90vh] p-2">
-          <img
-            src={selectedImage || ''}
-            alt="Document page"
-            className="max-w-full max-h-[85vh] object-contain rounded"
-          />
+          <DialogTitle className="sr-only">ソース文書画像の拡大表示</DialogTitle>
+          {selectedImage && (
+            <img
+              src={selectedImage}
+              alt="Document page"
+              className="max-w-full max-h-[85vh] object-contain rounded"
+            />
+          )}
         </DialogContent>
       </Dialog>
     </div>
