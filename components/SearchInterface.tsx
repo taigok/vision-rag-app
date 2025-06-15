@@ -7,7 +7,6 @@ import { getUrl } from 'aws-amplify/storage';
 import outputs from '@/amplify_outputs.json';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
@@ -179,102 +178,93 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
       {results && (
         <div className="grid lg:grid-cols-3 gap-6">
           {/* AI Answer */}
-          <Card className="lg:col-span-2">
-            <CardHeader>
-              <CardTitle>AI回答</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <p className="text-muted-foreground whitespace-pre-wrap">
+          <div className="lg:col-span-2">
+            <h3 className="text-lg font-semibold mb-3">AI回答</h3>
+            <div className="prose prose-sm max-w-none">
+              <p className="text-foreground whitespace-pre-wrap leading-relaxed">
                 {results.answer}
               </p>
-            </CardContent>
-          </Card>
+            </div>
+          </div>
 
           {/* Source Documents */}
           {results.sources.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>参照画像</CardTitle>
-                <CardDescription>{results.totalResults}件</CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="space-y-3">
-                  {results.sources.map((source, index) => {
-                    console.log('Source key:', source.key, 'Document ID:', source.document_id); // Debug log
-                    const pageMatch = source.key.match(/page[_-]?(\d+)\.png$/i);
-                    const pageNum = pageMatch ? pageMatch[1] : (index + 1).toString();
-                    
-                    // Extract filename from document_id (which should be the original filename)
-                    // document_id format is usually the original filename without extension
-                    const fileName = source.document_id.includes('.') 
-                      ? source.document_id 
-                      : `${source.document_id}.pdf`;
-                    
-                    const imageUrl = sourceImages[source.key];
-                    
-                    return (
-                      <Card
-                        key={index}
-                        className="cursor-pointer hover:bg-accent transition-colors"
-                        onClick={() => {
-                          if (imageUrl) {
-                            setSelectedImage(imageUrl);
-                          }
-                        }}
-                      >
-                        <CardContent className="p-2">
-                          <div className="flex gap-2 items-center">
-                            {/* Small Image Preview */}
-                            <div className="flex-shrink-0">
-                              {imageUrl ? (
-                                <div className="relative w-12 h-16 rounded border bg-muted overflow-hidden">
-                                  <img
-                                    src={imageUrl}
-                                    alt={`Page ${pageNum}`}
-                                    className="w-full h-full object-cover"
-                                  />
-                                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
-                                    <ZoomIn className="h-3 w-3 text-white" />
-                                  </div>
-                                </div>
-                              ) : (
-                                <div className="w-12 h-16 rounded border bg-muted flex items-center justify-center">
-                                  <FileImage className="w-4 h-4 text-muted-foreground" />
-                                </div>
-                              )}
+            <div>
+              <h3 className="text-lg font-semibold mb-3">
+                参照画像 <span className="text-sm font-normal text-muted-foreground">({results.totalResults}件)</span>
+              </h3>
+              <div className="space-y-3">
+                {results.sources.map((source, index) => {
+                  console.log('Source key:', source.key, 'Document ID:', source.document_id); // Debug log
+                  const pageMatch = source.key.match(/page[_-]?(\d+)\.png$/i);
+                  const pageNum = pageMatch ? pageMatch[1] : (index + 1).toString();
+                  
+                  // Extract filename from document_id (which should be the original filename)
+                  // document_id format is usually the original filename without extension
+                  const fileName = source.document_id.includes('.') 
+                    ? source.document_id 
+                    : `${source.document_id}.pdf`;
+                  
+                  const imageUrl = sourceImages[source.key];
+                  
+                  return (
+                    <div
+                      key={index}
+                      className="p-3 rounded-lg border bg-card cursor-pointer hover:bg-accent transition-colors"
+                      onClick={() => {
+                        if (imageUrl) {
+                          setSelectedImage(imageUrl);
+                        }
+                      }}
+                    >
+                      <div className="flex gap-3 items-center">
+                        {/* Small Image Preview */}
+                        <div className="flex-shrink-0">
+                          {imageUrl ? (
+                            <div className="relative w-12 h-16 rounded border bg-muted overflow-hidden">
+                              <img
+                                src={imageUrl}
+                                alt={`Page ${pageNum}`}
+                                className="w-full h-full object-cover"
+                              />
+                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+                                <ZoomIn className="h-3 w-3 text-white" />
+                              </div>
                             </div>
-                            
-                            {/* Compact Document Info */}
-                            <div className="flex-1 min-w-0">
-                              <p className="text-xs font-medium truncate">
-                                {fileName}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Page {pageNum}
-                              </p>
-                              <p className="text-xs text-muted-foreground">
-                                Score: {source.score.toFixed(2)}
-                              </p>
+                          ) : (
+                            <div className="w-12 h-16 rounded border bg-muted flex items-center justify-center">
+                              <FileImage className="w-4 h-4 text-muted-foreground" />
                             </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
-                </div>
-              </CardContent>
-            </Card>
+                          )}
+                        </div>
+                        
+                        {/* Compact Document Info */}
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium truncate">
+                            {fileName}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Page {pageNum}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            Score: {source.score.toFixed(2)}
+                          </p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
           )}
 
           {/* No Results */}
           {results.sources.length === 0 && (
-            <Card>
-              <CardContent className="text-center py-8">
-                <p className="text-muted-foreground">
-                  No relevant documents found for your query.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="text-center py-8">
+              <p className="text-muted-foreground">
+                関連する文書が見つかりませんでした。
+              </p>
+            </div>
           )}
         </div>
       )}
