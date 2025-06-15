@@ -42,12 +42,6 @@ def handler(event, context):
         filename = parts[3]
         user_id = session_id  # Use session ID as user ID
         print(f"Processing session-based document: sessionId={session_id}, filename={filename}")
-    elif parts[0] == 'private' and len(parts) >= 3:
-        user_id = parts[1]
-        filename = parts[2]
-    elif parts[0] == 'public' and len(parts) >= 2:
-        user_id = 'public'  # Use 'public' as user ID for public uploads
-        filename = parts[1]
     else:
         print(f"Invalid key format: {source_key}")
         return
@@ -88,12 +82,8 @@ def handler(event, context):
         
         for idx, image_path in enumerate(images):
             # Create S3 key for image based on path type
-            if parts[0] == 'sessions':
-                # For session-based uploads, use session structure
-                image_key = f"sessions/{user_id}/images/{doc_id}-page{idx+1:04d}.png"
-            else:
-                # For legacy paths, use old structure
-                image_key = f"images/{user_id}/{doc_id}/page_{idx+1:04d}.png"
+            # For session-based uploads, use session structure
+            image_key = f"sessions/{user_id}/images/{doc_id}-page{idx+1:04d}.png"
             
             # Upload image
             print(f"Uploading image to {dest_bucket}/{image_key}")

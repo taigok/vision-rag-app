@@ -35,16 +35,6 @@ def handler(event, context):
         filename = parts[3]
         doc_id = filename.split('-page')[0]
     # Legacy paths: images/public/{documentId}/page_XXXX.png or images/private/{userId}/{documentId}/page_XXXX.png
-    elif parts[0] == 'images' and len(parts) >= 4:
-        if parts[1] == 'public':
-            user_id = 'public'
-            doc_id = parts[2]
-        elif parts[1] == 'private' and len(parts) >= 5:
-            user_id = parts[2]
-            doc_id = parts[3]
-        else:
-            print(f"Invalid legacy key format: {source_key}")
-            return
     else:
         print(f"Invalid key format: {source_key}")
         return
@@ -59,13 +49,8 @@ def handler(event, context):
         temp_path = Path(temp_dir)
         
         # List all images for this document
-        if parts[0] == 'sessions':
-            # For session-based storage, images are in same folder with doc_id prefix
-            prefix = f"sessions/{user_id}/images/{doc_id}-page"
-        elif user_id == 'public':
-            prefix = f"images/public/{doc_id}/"
-        else:
-            prefix = f"images/private/{user_id}/{doc_id}/"
+        # For session-based storage, images are in same folder with doc_id prefix
+        prefix = f"sessions/{user_id}/images/{doc_id}-page"
         response = s3_client.list_objects_v2(
             Bucket=source_bucket,
             Prefix=prefix
@@ -136,7 +121,6 @@ def handler(event, context):
             vector_bucket = os.environ.get('VECTOR_BUCKET_NAME', os.environ.get('VECTOR_BUCKET', 'vector-files'))
             
             # For session-based storage, we'll maintain a single index per session
-            if parts[0] == 'sessions':
                 # Load existing session index if exists
                 session_index_key = f"sessions/{user_id}/index.faiss"
                 session_meta_key = f"sessions/{user_id}/metadata.json"
@@ -187,22 +171,6 @@ def handler(event, context):
                     session_meta_key,
                     ExtraArgs={'ContentType': 'application/json'}
                 )
-            else:
-                # Legacy per-document index upload
-                index_key = f"private/{user_id}/{index_id}/index.index"
-                s3_client.upload_file(
-                    str(index_path),
-                    vector_bucket,
-                    index_key
-                )
-                
-                meta_key = f"private/{user_id}/{index_id}/meta.json"
-                s3_client.upload_file(
-                    str(meta_path),
-                    vector_bucket,
-                    meta_key,
-                    ExtraArgs={'ContentType': 'application/json'}
-                )
             
             print(f"Successfully created document index {index_id} with {index.ntotal} vectors")
             
@@ -214,9 +182,9 @@ def handler(event, context):
                     'vectorCount': index.ntotal,
                     'pageCount': len(metadata['images']),
                     'indexLocation': {
-                        'bucket': vector_bucket,
-                        'indexKey': index_key,
-                        'metaKey': meta_key
+                        'bucket': source_bucket,
+                        'indexKey': session_index_key,
+                        'metaKey': session_meta_key
                     }
                 })
             }

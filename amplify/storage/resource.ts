@@ -44,7 +44,7 @@ export const embedWorker = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      CODE_VERSION: '9', // Session-based unified index per session
+      CODE_VERSION: '10', // Session-only architecture, removed public/private legacy
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,
