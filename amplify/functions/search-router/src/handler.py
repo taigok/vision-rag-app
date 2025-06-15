@@ -455,32 +455,23 @@ def generate_answer_with_gemini(query, images):
     """Generate answer using Gemini Vision Pro"""
     try:
         if not images:
-            return "No relevant images found to answer your query."
+            return "関連する文書画像が見つかりませんでした。"
         
         # Initialize Gemini model (using vision model)
         model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
         
         # Prepare prompt
-        prompt = f"""あなたは文書ページを分析してユーザーの質問に答えるAIアシスタントです。
+        prompt = f"""質問: {query}
 
-ユーザーの質問: {query}
+この文書画像から質問に答えてください。
 
-指示事項:
-1. 提供されたすべての文書ページを注意深く確認してください
-2. ユーザーの質問に関連する情報を抽出してください
-3. 文書から具体的な詳細を含む、明確で構造化された回答を提供してください
-4. グラフ、表、図がある場合は、関連性があればその内容を説明してください
-5. 明確性のために、適切な場合は箇条書きや番号付きリストを使用してください
-6. 文書に関連情報が含まれていない場合は、その旨を明確に述べてください
+回答要件:
+• 文書の内容のみに基づく
+• 2-3文で簡潔に回答
+• 該当情報がなければ「関連情報なし」
+• 日本語で回答
 
-重要事項:
-- 文書に直接表示されている情報を具体的に引用してください
-- 画像に表示されている以上の推測は避けてください
-- テキストが不明瞭または部分的にしか見えない場合は、その制限について言及してください
-- プロフェッショナルで親切な口調を保ってください
-- 必ず日本語で回答してください
-
-以下に表示される文書ページに基づいて回答してください:"""
+文書:"""
         
         # Create content with images
         content = [prompt]
