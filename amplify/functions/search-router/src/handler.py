@@ -364,10 +364,7 @@ def generate_text_embedding(text):
         return embedding
     except Exception as e:
         print(f"Error generating text embedding: {e}")
-        # Fallback to random embedding for demo
-        embedding = np.random.randn(1536).astype('float32')
-        embedding = embedding / np.linalg.norm(embedding)
-        return embedding
+        raise e
 
 def generate_image_embedding_from_base64(image_base64):
     """Generate embedding for base64 encoded image"""
@@ -403,10 +400,7 @@ def generate_image_embedding_from_base64(image_base64):
         return embedding
     except Exception as e:
         print(f"Error generating image embedding: {e}")
-        # Fallback to random embedding for demo
-        embedding = np.random.randn(1536).astype('float32')
-        embedding = embedding / np.linalg.norm(embedding)
-        return embedding
+        raise e
 
 def generate_answer_with_gemini(query, images):
     """Generate answer using Gemini Vision Pro"""
@@ -451,6 +445,4 @@ def generate_answer_with_gemini(query, images):
         
     except Exception as e:
         print(f"Error generating answer with Gemini: {e}")
-        
-        # Fallback response
-        return f"I found {len(images)} relevant images for your query '{query}', but I'm unable to generate a detailed answer at this moment. The images appear to be related to your search."
+        raise e
