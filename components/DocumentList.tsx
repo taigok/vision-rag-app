@@ -330,11 +330,11 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
             <Image className="h-4 w-4" />
             変換された画像 ({images.length}枚)
           </h4>
-          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
             {images.map((image, index) => (
               <div
                 key={image.key}
-                className="relative aspect-square rounded-lg border bg-muted cursor-pointer hover:shadow-md transition-all group overflow-hidden"
+                className="relative flex-shrink-0 w-24 h-24 sm:w-32 sm:h-32 rounded-lg border bg-muted cursor-pointer hover:shadow-md transition-all group overflow-hidden"
                 onClick={() => setSelectedImage(image.url)}
               >
                 <img
@@ -344,9 +344,9 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
                   loading="lazy"
                 />
                 <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
-                  <ZoomIn className="h-6 w-6 text-white" />
+                  <ZoomIn className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
                 </div>
-                <div className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-2 py-1 rounded">
+                <div className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-1 py-0.5 rounded text-center min-w-4">
                   {index + 1}
                 </div>
               </div>

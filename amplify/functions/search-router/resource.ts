@@ -30,7 +30,7 @@ export const searchRouter = defineFunction((scope) => {
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      CODE_VERSION: '11', // Force redeployment
+      CODE_VERSION: '14', // Force redeployment - Standard env var pattern
     },
     timeout: Duration.seconds(60),
     memorySize: 1024,

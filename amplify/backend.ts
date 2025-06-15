@@ -4,7 +4,7 @@
 import { defineBackend, secret } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
-import { rawFiles, vectorFiles, convertWorker, embedWorker } from './storage/resource';
+import { rawFiles, convertWorker, embedWorker } from './storage/resource';
 import { searchRouter } from './functions/search-router/resource';
 import { EventType } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
@@ -18,7 +18,6 @@ const backend = defineBackend({
   auth,
   data,
   rawFiles,
-  vectorFiles,
   convertWorker,
   embedWorker,
   searchRouter,
@@ -26,18 +25,21 @@ const backend = defineBackend({
 
 // Configure S3 event notifications for Lambda triggers
 const rawFilesBucket = backend.rawFiles.resources.bucket;
-const vectorFilesBucket = backend.vectorFiles.resources.bucket;
 
 // Grant permissions for convert-worker and embed-worker (same resourceGroup as storage)
 rawFilesBucket.grantRead(backend.convertWorker.resources.lambda);
 rawFilesBucket.grantWrite(backend.convertWorker.resources.lambda);  // Allow writing images/ folder to same bucket
 rawFilesBucket.grantRead(backend.embedWorker.resources.lambda);   // Read images from same bucket
 rawFilesBucket.grantWrite(backend.embedWorker.resources.lambda);  // Write session indexes to same bucket
-vectorFilesBucket.grantWrite(backend.embedWorker.resources.lambda);
 
 // Grant permissions for search-router
-vectorFilesBucket.grantRead(backend.searchRouter.resources.lambda);
 rawFilesBucket.grantRead(backend.searchRouter.resources.lambda);
+
+// Add storage bucket name as environment variable (standard Amplify Gen 2 pattern)
+(backend.searchRouter.resources.lambda as any).addEnvironment(
+  'STORAGE_BUCKET_NAME', 
+  rawFilesBucket.bucketName
+);
 
 // Configure S3 event notifications
 

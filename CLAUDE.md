@@ -21,7 +21,6 @@ The application follows a serverless pipeline architecture with session-based is
   - `sessions/{sessionId}/images/` - Converted PNG images from documents
   - `sessions/{sessionId}/index.faiss` - Unified Faiss index per session
   - `sessions/{sessionId}/metadata.json` - Session metadata with document mapping
-- `vectorFiles`: Legacy storage (no longer used in current architecture)
 
 ### Lambda Functions (Python 3.12)
 Convert-worker and embed-worker are in the `storage` resourceGroup to enable S3 triggers; search-router is in the `functions` resourceGroup:
@@ -95,11 +94,26 @@ curl -X POST "https://{api-id}.execute-api.ap-northeast-1.amazonaws.com/prod/sea
   -d '{"query":"test","sessionId":"test-session","topK":5}'
 ```
 
-### Force Deployment
-To force Lambda function redeployment when code changes aren't detected:
-1. Update `CODE_VERSION` in respective resource files
-2. Update function name version (e.g., `V10` → `V11`)
-3. Commit changes to trigger Amplify sandbox deployment
+### Deployment Workflow
+**Standard Deployment**:
+```bash
+npx ampx sandbox     # Deploy backend changes
+npm run dev          # Start frontend (separate terminal)
+```
+
+**Lambda Function Code Updates**:
+1. Rebuild container image: `./scripts/rebuild-[function-name].sh` (builds & pushes to ECR)
+2. Deploy Lambda updates: `npx ampx sandbox` (reads `.ecr-tag` and deploys)
+
+**Force Redeployment** (when changes aren't detected):
+- Update `CODE_VERSION` in respective resource files (`amplify/functions/*/resource.ts`)
+- Follow container update process above
+
+**Container Update Process**:
+- Scripts build Docker images and push to ECR with timestamp tags
+- `.ecr-tag` files store current image tags for CDK deployment
+- `npx ampx sandbox` reads tag files and updates Lambda functions
+- **Both steps required**: rebuild script + sandbox deployment
 
 ## Key Implementation Notes
 
@@ -118,7 +132,14 @@ All Lambda functions use ECR container images instead of ZIP packages due to sys
 - **embed-worker**: Cohere, Faiss, PIL, numpy
 - **search-router**: Faiss, google-generativeai, PIL
 
-Lambda functions do not use hardcoded bucket names in environment variables - they rely on dynamic bucket resolution at runtime for portability.
+**Environment Variable Pattern**: Lambda functions use Amplify Gen 2's standard pattern for resource access:
+```typescript
+// In amplify/backend.ts
+(backend.searchRouter.resources.lambda as any).addEnvironment(
+  'STORAGE_BUCKET_NAME', 
+  rawFilesBucket.bucketName
+);
+```
 
 ### ECR Tag Management
 Scripts now generate timestamp-based tags (format: `YYYYMMDD-HHMMSS`) instead of using `latest`:
@@ -127,8 +148,9 @@ Scripts now generate timestamp-based tags (format: `YYYYMMDD-HHMMSS`) instead of
 - Both timestamp tag and `latest` are pushed to ECR
 
 ### Environment Variables Required
-- `COHERE_API_KEY`: For embedding generation
-- `GEMINI_API_KEY`: For AI response generation
+Stored in `.env` file at project root:
+- `COHERE_API_KEY`: For embedding generation (Cohere API)
+- `GEMINI_API_KEY`: For AI response generation (Google Gemini Vision Pro)
 
 ### File Paths in Tests
 Test files include path manipulation to import Lambda handlers:

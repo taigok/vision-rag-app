@@ -234,11 +234,12 @@ def handler(event, context):
 
 def load_session_index(session_id):
     """Load unified index for a specific session"""
-    # For session-based storage, indexes are in the raw files bucket
-    # Get the bucket name from environment variables
-    raw_bucket = os.environ.get('RAW_FILES_BUCKET', 
-                               os.environ.get('AMPLIFY_STORAGE_BUCKET_NAME', 
-                               os.environ.get('SOURCE_BUCKET', 'raw-files')))
+    # Get the bucket name from environment variable (standard Amplify Gen 2 pattern)
+    raw_bucket = os.environ.get('STORAGE_BUCKET_NAME')
+    
+    if not raw_bucket:
+        print("STORAGE_BUCKET_NAME environment variable not found")
+        return None, None
     
     print(f"Using bucket: {raw_bucket} for session: {session_id}")
     

@@ -91,10 +91,3 @@ export const rawFiles = defineStorage({
   }),
 });
 
-export const vectorFiles = defineStorage({
-  name: 'vector-files',
-  versioned: true,
-  access: (allow) => ({
-    'private/*': [allow.authenticated.to(['read', 'write'])],
-  }),
-});

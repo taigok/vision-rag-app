@@ -37,6 +37,7 @@ if [ -f "${PROJECT_ROOT}/.env" ]; then
     export $(grep -v '^#' "${PROJECT_ROOT}/.env" | xargs)
 fi
 docker buildx build --platform linux/amd64 --provenance=false \
+    --build-arg COHERE_API_KEY="${COHERE_API_KEY}" \
     --build-arg GEMINI_API_KEY="${GEMINI_API_KEY}" \
     -t ${REPO_NAME}:${TAG} --load .
 
