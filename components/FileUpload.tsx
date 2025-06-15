@@ -109,7 +109,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   return (
     <div className="w-full max-w-xl mx-auto">
       <Card
-        className={`relative border-2 border-dashed p-8 transition-colors ${
+        className={`relative border-2 border-dashed p-4 transition-colors h-32 sm:h-40 ${
           dragActive
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25'
@@ -130,15 +130,18 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           
           <label
             htmlFor="file-upload"
-            className="flex flex-col items-center justify-center cursor-pointer"
+            className="flex flex-col items-center justify-center cursor-pointer h-full"
           >
-            <Upload className="w-12 h-12 mb-4 text-muted-foreground" />
+            <Upload className="w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3 text-muted-foreground" />
             
-            <p className="mb-2 text-sm text-muted-foreground">
-              <span className="font-semibold">クリックしてアップロード</span> またはドラッグ&ドロップ
+            <p className="text-sm sm:text-base text-muted-foreground text-center leading-tight mb-1">
+              <span className="font-semibold">クリックしてアップロード</span>
+              <br className="sm:hidden" />
+              <span className="hidden sm:inline"> または</span>
+              <span className="sm:hidden"> / </span>ドラッグ&ドロップ
             </p>
-            <p className="text-xs text-muted-foreground">
-              PDFまたはPPTX（最大50MB）
+            <p className="text-xs sm:text-sm text-muted-foreground">
+              PDF・PPTX（最大50MB）
             </p>
           </label>
       </Card>
