@@ -27,7 +27,7 @@ function HomeContent() {
       {/* Header */}
       <header className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
+          <div className="flex justify-between items-center h-12">
             <div className="flex items-center">
               <h1 className="text-2xl font-bold">Vision RAG</h1>
             </div>
@@ -47,11 +47,8 @@ function HomeContent() {
       {/* Hero Section */}
       <section className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold tracking-tight mb-3">
-            AI文書検索システム
-          </h2>
-          <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            文書をアップロードして、AIで内容を検索できます
+          <p className="text-lg text-muted-foreground max-w-6xl mx-auto">
+            PDFやPowerPointの内容を画像化してベクトル検索し、AIが文書の内容について回答するシステムです
           </p>
         </div>
       </section>
