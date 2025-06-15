@@ -1,3 +1,6 @@
+/**
+ * Vision RAG App Backend Configuration - PDFやPowerPointの内容を画像化してベクトル検索し、AIが文書の内容について回答するシステム
+ */
 import { defineBackend, secret } from '@aws-amplify/backend';
 import { auth } from './auth/resource';
 import { data } from './data/resource';
@@ -60,7 +63,7 @@ rawFilesBucket.addEventNotification(
 // Create REST API for search functionality
 const stack = Stack.of(backend.searchRouter.resources.lambda);
 const api = new RestApi(stack, 'VisionRAGApi', {
-  restApiName: 'Vision RAG Search API',
+  restApiName: 'Vision RAG Search API - PDFやPowerPointの内容を画像化してベクトル検索し、AIが文書の内容について回答するシステム',
   description: 'API for searching documents with Vision RAG',
   defaultCorsPreflightOptions: {
     allowOrigins: Cors.ALL_ORIGINS,

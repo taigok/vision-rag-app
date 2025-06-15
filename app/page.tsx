@@ -27,9 +27,12 @@ function HomeContent() {
       {/* Header */}
       <header className="border-b">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-12">
+          <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
-              <h1 className="text-2xl font-bold">Vision RAG</h1>
+              <div>
+          <h1 className="text-2xl font-bold">Vision RAG</h1>
+          <p className="text-sm text-muted-foreground">PDFやパワポを画像化して検索・AIが関連画像を見ながら質問に回答するツール</p>
+        </div>
             </div>
             <Button
               variant="ghost"
@@ -43,15 +46,6 @@ function HomeContent() {
           </div>
         </div>
       </header>
-
-      {/* Hero Section */}
-      <section className="py-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <p className="text-lg text-muted-foreground max-w-6xl mx-auto">
-            PDFやPowerPointの内容を画像化してベクトル検索し、AIが文書の内容について回答するシステムです
-          </p>
-        </div>
-      </section>
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pb-6">
