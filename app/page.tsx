@@ -14,12 +14,19 @@ import { useSession } from '@/contexts/SessionContext';
 function HomeContent() {
   const { user } = useAuthenticator((context) => [context.user]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const [isIndexReady, setIsIndexReady] = useState(false);
+  const [hasDocuments, setHasDocuments] = useState(false);
   const { sessionId, resetSession } = useSession();
 
   const handleUploadComplete = (key: string) => {
     console.log('Upload completed:', key);
     // Trigger refresh of document list
     setRefreshKey(prev => prev + 1);
+  };
+
+  const handleIndexStatusChange = (isReady: boolean, hasDocsValue: boolean) => {
+    setIsIndexReady(isReady);
+    setHasDocuments(hasDocsValue);
   };
 
   return (
@@ -82,7 +89,7 @@ function HomeContent() {
                     <FileText className="h-4 w-4" />
                     あなたの文書
                   </h3>
-                  <DocumentList refreshTrigger={refreshKey} />
+                  <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
                 </div>
               </div>
             </CardContent>
@@ -103,7 +110,7 @@ function HomeContent() {
               </CardDescription>
             </CardHeader>
             <CardContent>
-              <SearchInterface />
+              <SearchInterface isIndexReady={isIndexReady} hasDocuments={hasDocuments} />
             </CardContent>
           </Card>
         </div>

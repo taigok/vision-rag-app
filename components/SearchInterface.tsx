@@ -13,6 +13,11 @@ import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
 
+interface SearchInterfaceProps {
+  isIndexReady?: boolean;
+  hasDocuments?: boolean;
+}
+
 interface SearchResult {
   answer: string;
   sources: {
@@ -24,7 +29,7 @@ interface SearchResult {
   totalResults: number;
 }
 
-export default function SearchInterface() {
+export default function SearchInterface({ isIndexReady = false, hasDocuments = false }: SearchInterfaceProps) {
   const [query, setQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult | null>(null);
@@ -90,35 +95,58 @@ export default function SearchInterface() {
 
   return (
     <div className="w-full max-w-4xl mx-auto space-y-6">
-      {/* Search Form */}
-      <form onSubmit={handleSearch}>
-        <div className="flex gap-2">
-          <div className="relative flex-1">
-            <Input
-              type="text"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              placeholder="文書について質問してください..."
-              className="pr-10"
-              disabled={loading}
-            />
-            <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          </div>
-          <Button
-            type="submit"
-            disabled={loading || !query.trim()}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                検索中...
-              </>
-            ) : (
-              '検索'
-            )}
-          </Button>
-        </div>
-      </form>
+      {/* Show message when no documents */}
+      {!hasDocuments ? (
+        <Alert>
+          <AlertCircle className="h-4 w-4" />
+          <AlertDescription>
+            文書をアップロードしてから質問できるようになります。上のアップロードエリアからPDFやPowerPointファイルをアップロードしてください。
+          </AlertDescription>
+        </Alert>
+      ) : !isIndexReady ? (
+        <Alert>
+          <Loader2 className="h-4 w-4 animate-spin" />
+          <AlertDescription>
+            アップロードした文書のインデックスを作成中です...
+            <br />
+            <span className="text-xs text-muted-foreground">
+              文書を画像化してベクトル化しています。完了するまでお待ちください。
+            </span>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <>
+          {/* Search Form */}
+          <form onSubmit={handleSearch}>
+            <div className="flex gap-2">
+              <div className="relative flex-1">
+                <Input
+                  type="text"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                  placeholder="文書について質問してください..."
+                  className="pr-10"
+                  disabled={loading}
+                />
+                <Search className="absolute right-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              </div>
+              <Button
+                type="submit"
+                disabled={loading || !query.trim()}
+              >
+                {loading ? (
+                  <>
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    検索中...
+                  </>
+                ) : (
+                  '検索'
+                )}
+              </Button>
+            </div>
+          </form>
+        </>
+      )}
 
       {/* Error Message */}
       {error && (

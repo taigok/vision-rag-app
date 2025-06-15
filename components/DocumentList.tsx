@@ -18,12 +18,14 @@ interface Document {
 
 interface DocumentListProps {
   refreshTrigger?: number;
+  onIndexStatusChange?: (isReady: boolean, hasDocuments: boolean) => void;
 }
 
-export default function DocumentList({ refreshTrigger }: DocumentListProps) {
+export default function DocumentList({ refreshTrigger, onIndexStatusChange }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isIndexReady, setIsIndexReady] = useState(false);
   const { sessionId } = useSession();
 
   const fetchDocuments = async () => {
@@ -49,6 +51,27 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
 
       setDocuments(docs);
       setError(null);
+      
+      const hasDocuments = docs.length > 0;
+      
+      // Check if index file exists to determine if search is ready
+      if (hasDocuments) {
+        try {
+          const indexResult = await list({
+            path: `sessions/${sessionId}/index.faiss`,
+          });
+          const indexExists = indexResult.items.length > 0;
+          setIsIndexReady(indexExists);
+          onIndexStatusChange?.(indexExists, hasDocuments);
+        } catch (indexError) {
+          console.log('Index file not found yet');
+          setIsIndexReady(false);
+          onIndexStatusChange?.(false, hasDocuments);
+        }
+      } else {
+        setIsIndexReady(false);
+        onIndexStatusChange?.(false, hasDocuments);
+      }
     } catch (error) {
       console.error('Failed to fetch documents:', error);
       setError('Failed to load documents');
@@ -77,6 +100,30 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
   useEffect(() => {
     fetchDocuments();
   }, [refreshTrigger]);
+
+  // Check only index status without refetching documents
+  const checkIndexStatus = async () => {
+    try {
+      const indexResult = await list({
+        path: `sessions/${sessionId}/index.faiss`,
+      });
+      const indexExists = indexResult.items.length > 0;
+      if (indexExists !== isIndexReady) {
+        setIsIndexReady(indexExists);
+        onIndexStatusChange?.(indexExists, documents.length > 0);
+      }
+    } catch (indexError) {
+      // Index file not found yet, keep current state
+    }
+  };
+
+  // Poll for index file when documents exist but index is not ready
+  useEffect(() => {
+    if (!isIndexReady && documents.length > 0) {
+      const interval = setInterval(checkIndexStatus, 3000); // Check every 3 seconds
+      return () => clearInterval(interval);
+    }
+  }, [isIndexReady, documents.length, sessionId]);
 
   const formatFileSize = (bytes?: number) => {
     if (!bytes) return 'Unknown size';
