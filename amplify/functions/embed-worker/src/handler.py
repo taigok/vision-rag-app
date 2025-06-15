@@ -180,7 +180,7 @@ def handler(event, context):
                     'indexId': index_id,
                     'documentId': doc_id,
                     'vectorCount': index.ntotal,
-                    'pageCount': len(metadata['images']),
+                    'pageCount': len(metadata['documents'][doc_id]['images']) if 'documents' in metadata else len(metadata['images']),
                     'indexLocation': {
                         'bucket': source_bucket,
                         'indexKey': session_index_key,

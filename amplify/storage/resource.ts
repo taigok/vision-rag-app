@@ -35,7 +35,7 @@ export const embedWorker = defineFunction((scope) => {
     'embed-worker'
   );
 
-  return new Function(scope, 'EmbedWorkerV8', {
+  return new Function(scope, 'EmbedWorkerV9', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
@@ -44,7 +44,7 @@ export const embedWorker = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      CODE_VERSION: '12', // Fix indentation error in embed-worker
+      CODE_VERSION: '13', // Fix metadata structure error in embed-worker
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,
