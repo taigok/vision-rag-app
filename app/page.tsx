@@ -31,7 +31,7 @@ function HomeContent() {
             <div className="flex items-center">
               <div>
           <h1 className="text-2xl font-bold">Vision RAG</h1>
-          <p className="text-sm text-muted-foreground">PDFやパワポを画像化して検索・AIが関連画像を見ながら質問に回答するツール</p>
+          <p className="text-sm text-muted-foreground">PDFやパワポをアップロード→画像化・ベクトル化→質問すると関連画像をAIが参照して回答するデモアプリ</p>
         </div>
             </div>
             <Button
