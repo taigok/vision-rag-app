@@ -121,56 +121,56 @@ def handler(event, context):
             vector_bucket = os.environ.get('VECTOR_BUCKET_NAME', os.environ.get('VECTOR_BUCKET', 'vector-files'))
             
             # For session-based storage, we'll maintain a single index per session
-                # Load existing session index if exists
-                session_index_key = f"sessions/{user_id}/index.faiss"
-                session_meta_key = f"sessions/{user_id}/metadata.json"
+            # Load existing session index if exists
+            session_index_key = f"sessions/{user_id}/index.faiss"
+            session_meta_key = f"sessions/{user_id}/metadata.json"
+            
+            try:
+                # Try to download existing index
+                existing_index_path = temp_path / 'existing_index.faiss'
+                existing_meta_path = temp_path / 'existing_meta.json'
                 
-                try:
-                    # Try to download existing index
-                    existing_index_path = temp_path / 'existing_index.faiss'
-                    existing_meta_path = temp_path / 'existing_meta.json'
-                    
-                    # Use source bucket for session data
-                    s3_client.download_file(source_bucket, session_index_key, str(existing_index_path))
-                    s3_client.download_file(source_bucket, session_meta_key, str(existing_meta_path))
-                    
-                    # Load and merge with existing index
-                    existing_index = faiss.read_index(str(existing_index_path))
-                    existing_index.add(index.reconstruct_n(0, index.ntotal))
-                    index = existing_index
-                    
-                    # Load and merge metadata
-                    with open(existing_meta_path, 'r') as f:
-                        existing_meta = json.load(f)
-                    # Update metadata with new document
-                    existing_meta['documents'][doc_id] = metadata
-                    metadata = existing_meta
-                except:
-                    # First document in session, create new metadata structure
-                    metadata = {
-                        'session_id': user_id,
-                        'documents': {
-                            doc_id: metadata
-                        }
+                # Use source bucket for session data
+                s3_client.download_file(source_bucket, session_index_key, str(existing_index_path))
+                s3_client.download_file(source_bucket, session_meta_key, str(existing_meta_path))
+                
+                # Load and merge with existing index
+                existing_index = faiss.read_index(str(existing_index_path))
+                existing_index.add(index.reconstruct_n(0, index.ntotal))
+                index = existing_index
+                
+                # Load and merge metadata
+                with open(existing_meta_path, 'r') as f:
+                    existing_meta = json.load(f)
+                # Update metadata with new document
+                existing_meta['documents'][doc_id] = metadata
+                metadata = existing_meta
+            except:
+                # First document in session, create new metadata structure
+                metadata = {
+                    'session_id': user_id,
+                    'documents': {
+                        doc_id: metadata
                     }
-                
-                # Save updated index and metadata
-                faiss.write_index(index, str(index_path))
-                with open(meta_path, 'w') as f:
-                    json.dump(metadata, f)
-                
-                # Upload unified session index to source bucket
-                s3_client.upload_file(
-                    str(index_path),
-                    source_bucket,
-                    session_index_key
-                )
-                s3_client.upload_file(
-                    str(meta_path),
-                    source_bucket,
-                    session_meta_key,
-                    ExtraArgs={'ContentType': 'application/json'}
-                )
+                }
+            
+            # Save updated index and metadata
+            faiss.write_index(index, str(index_path))
+            with open(meta_path, 'w') as f:
+                json.dump(metadata, f)
+            
+            # Upload unified session index to source bucket
+            s3_client.upload_file(
+                str(index_path),
+                source_bucket,
+                session_index_key
+            )
+            s3_client.upload_file(
+                str(meta_path),
+                source_bucket,
+                session_meta_key,
+                ExtraArgs={'ContentType': 'application/json'}
+            )
             
             print(f"Successfully created document index {index_id} with {index.ntotal} vectors")
             
