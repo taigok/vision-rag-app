@@ -80,14 +80,6 @@ searchResource.addMethod(
   })
 );
 
-// Explicitly add OPTIONS method for CORS preflight
-searchResource.addMethod(
-  'OPTIONS',
-  new LambdaIntegration(backend.searchRouter.resources.lambda, {
-    proxy: true,
-  })
-);
-
 // Add API endpoint to outputs
 backend.addOutput({
   custom: {

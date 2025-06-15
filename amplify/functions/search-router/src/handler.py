@@ -21,6 +21,31 @@ genai.configure(api_key=os.environ.get('GEMINI_API_KEY', ''))
 cached_index = None
 cached_metadata = None
 
+def get_cors_headers(origin=None):
+    """Get appropriate CORS headers based on origin"""
+    # Allow localhost for development and Amplify domains for production
+    allowed_origins = [
+        'http://localhost:3000',
+        'https://localhost:3000',
+    ]
+    
+    # Add wildcard for Amplify hosting (*.amplifyapp.com)
+    if origin and (origin.endswith('.amplifyapp.com') or origin in allowed_origins):
+        return {
+            'Access-Control-Allow-Origin': origin,
+            'Access-Control-Allow-Methods': 'POST, OPTIONS',
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+            'Access-Control-Allow-Credentials': 'false'
+        }
+    else:
+        # Default to localhost for development
+        return {
+            'Access-Control-Allow-Origin': 'http://localhost:3000',
+            'Access-Control-Allow-Methods': 'POST, OPTIONS', 
+            'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+            'Access-Control-Allow-Credentials': 'false'
+        }
+
 def handler(event, context):
     """
     Search for similar images and generate answers using Gemini Vision Pro
@@ -28,16 +53,15 @@ def handler(event, context):
     """
     print(f"Event: {json.dumps(event)}")
     
+    # Get origin from headers for CORS
+    origin = event.get('headers', {}).get('origin') or event.get('headers', {}).get('Origin')
+    cors_headers = get_cors_headers(origin)
+    
     # Handle CORS preflight request
     if event.get('httpMethod') == 'OPTIONS':
         return {
             'statusCode': 200,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-                'Access-Control-Allow-Credentials': 'false'
-            },
+            'headers': cors_headers,
             'body': ''
         }
     
@@ -45,14 +69,11 @@ def handler(event, context):
     try:
         body = json.loads(event.get('body', '{}'))
     except json.JSONDecodeError:
+        error_headers = cors_headers.copy()
+        error_headers['Content-Type'] = 'application/json'
         return {
             'statusCode': 400,
-            'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
-                'Content-Type': 'application/json'
-            },
+            'headers': error_headers,
             'body': json.dumps({'error': 'Invalid JSON in request body'})
         }
     
@@ -61,9 +82,7 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                **cors_headers,
                 'Content-Type': 'application/json'
             },
             'body': json.dumps({'error': 'Query is required'})
@@ -75,9 +94,7 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                **cors_headers,
                 'Content-Type': 'application/json'
             },
             'body': json.dumps({'error': 'sessionId is required'})
@@ -206,23 +223,23 @@ def handler(event, context):
         
     except Exception as e:
         print(f"Error in search: {e}")
+        error_headers = cors_headers.copy()
+        error_headers['Content-Type'] = 'application/json'
         return {
             'statusCode': 500,
-            'headers': {
-                'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': '*',
-                'Access-Control-Allow-Methods': 'POST, OPTIONS',
-                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
-            },
+            'headers': error_headers,
             'body': json.dumps({'error': str(e)})
         }
 
 def load_session_index(session_id):
     """Load unified index for a specific session"""
     # For session-based storage, indexes are in the raw files bucket
-    # Get the bucket name from environment or use the bucket that triggered this
-    raw_bucket = os.environ.get('AMPLIFY_STORAGE_BUCKET_NAME', 
-                               os.environ.get('SOURCE_BUCKET', 'raw-files'))
+    # Get the bucket name from environment variables
+    raw_bucket = os.environ.get('RAW_FILES_BUCKET', 
+                               os.environ.get('AMPLIFY_STORAGE_BUCKET_NAME', 
+                               os.environ.get('SOURCE_BUCKET', 'raw-files')))
+    
+    print(f"Using bucket: {raw_bucket} for session: {session_id}")
     
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)

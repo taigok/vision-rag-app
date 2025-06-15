@@ -10,16 +10,17 @@ export const searchRouter = defineFunction((scope) => {
     'search-router'
   );
 
-  return new Function(scope, 'SearchRouterV4', {
+  return new Function(scope, 'SearchRouterV7', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      RAW_FILES_BUCKET: 'amplify-visionragapp-node-s-rawfilesbucketb0479f06-w1m4dpdutqq3',
-      CODE_VERSION: '7', // Fixed CORS headers for all responses
+      VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ykgz2kegjvuj',
+      RAW_FILES_BUCKET: 'amplify-visionragapp-node-s-rawfilesbucketb0479f06-a6obja9tm4hl',
+      AMPLIFY_STORAGE_BUCKET_NAME: 'amplify-visionragapp-node-s-rawfilesbucketb0479f06-a6obja9tm4hl',
+      CODE_VERSION: '10', // Fixed bucket environment variable name
     },
     timeout: Duration.seconds(60),
     memorySize: 1024,

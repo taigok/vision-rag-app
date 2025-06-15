@@ -63,8 +63,13 @@ export default function SearchInterface() {
         }),
       });
 
+      console.log('Response status:', response.status);
+      console.log('Response headers:', Object.fromEntries(response.headers.entries()));
+
       if (!response.ok) {
-        throw new Error(`Search failed: ${response.statusText}`);
+        const errorText = await response.text();
+        console.log('Error response body:', errorText);
+        throw new Error(`Search failed: ${response.status} ${response.statusText} - ${errorText}`);
       }
 
       const data: SearchResult = await response.json();
