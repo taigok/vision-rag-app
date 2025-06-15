@@ -9,11 +9,13 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Upload, FileText, LogOut } from 'lucide-react';
+import { Search, Upload, FileText, LogOut, RefreshCw } from 'lucide-react';
+import { useSession } from '@/contexts/SessionContext';
 
 function HomeContent() {
   const { user, signOut } = useAuthenticator((context) => [context.user, context.signOut]);
   const [refreshKey, setRefreshKey] = useState(0);
+  const { sessionId, resetSession } = useSession();
 
   const handleUploadComplete = (key: string) => {
     console.log('Upload completed:', key);
@@ -37,11 +39,23 @@ function HomeContent() {
                     {(user?.signInDetails?.loginId || user?.username || 'U').charAt(0).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <span className="text-sm text-muted-foreground">
-                  {user?.signInDetails?.loginId || user?.username}
-                </span>
+                <div>
+                  <p className="text-sm text-muted-foreground">
+                    {user?.signInDetails?.loginId || user?.username}
+                  </p>
+                  <p className="text-xs text-muted-foreground">Session: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</p>
+                </div>
               </div>
               <Separator orientation="vertical" className="h-6" />
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={resetSession}
+                title="Start new session"
+              >
+                <RefreshCw className="h-4 w-4 mr-2" />
+                New Session
+              </Button>
               <Button
                 variant="ghost"
                 size="sm"

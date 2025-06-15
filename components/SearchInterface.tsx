@@ -11,6 +11,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent } from '@/components/ui/dialog';
 import { toast } from 'sonner';
+import { useSession } from '@/contexts/SessionContext';
 
 interface SearchResult {
   answer: string;
@@ -28,6 +29,7 @@ export default function SearchInterface() {
   const [loading, setLoading] = useState(false);
   const [results, setResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const { sessionId } = useSession();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
 
   const handleSearch = async (e: React.FormEvent) => {
@@ -57,6 +59,7 @@ export default function SearchInterface() {
         body: JSON.stringify({
           query: query.trim(),
           topK: 5,
+          sessionId: sessionId,
         }),
       });
 

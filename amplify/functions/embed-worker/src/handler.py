@@ -26,24 +26,31 @@ def handler(event, context):
     source_key = record['object']['key']
     
     # Extract user ID and document info
-    # Expected format: images/public/{documentId}/page_XXXX.png or images/private/{userId}/{documentId}/page_XXXX.png
     parts = source_key.split('/')
-    if len(parts) < 4 or parts[0] != 'images':
-        print(f"Invalid key format: {source_key}")
-        return
     
-    if parts[1] == 'public':
-        user_id = 'public'
-        doc_id = parts[2]
-    elif parts[1] == 'private' and len(parts) >= 5:
-        user_id = parts[2]
-        doc_id = parts[3]
+    # Handle session-based paths: sessions/{sessionId}/images/{docId}-pageXXXX.png
+    if parts[0] == 'sessions' and len(parts) >= 4:
+        user_id = parts[1]  # session ID
+        # Extract doc_id from filename (e.g., "docId-page0001.png")
+        filename = parts[3]
+        doc_id = filename.split('-page')[0]
+    # Legacy paths: images/public/{documentId}/page_XXXX.png or images/private/{userId}/{documentId}/page_XXXX.png
+    elif parts[0] == 'images' and len(parts) >= 4:
+        if parts[1] == 'public':
+            user_id = 'public'
+            doc_id = parts[2]
+        elif parts[1] == 'private' and len(parts) >= 5:
+            user_id = parts[2]
+            doc_id = parts[3]
+        else:
+            print(f"Invalid legacy key format: {source_key}")
+            return
     else:
         print(f"Invalid key format: {source_key}")
         return
     
     # Check if this is a new document (first page)
-    if not source_key.endswith('page_0001.png'):
+    if not (source_key.endswith('page0001.png') or source_key.endswith('page_0001.png')):
         print(f"Skipping non-first page: {source_key}")
         return
     
@@ -52,7 +59,10 @@ def handler(event, context):
         temp_path = Path(temp_dir)
         
         # List all images for this document
-        if user_id == 'public':
+        if parts[0] == 'sessions':
+            # For session-based storage, images are in same folder with doc_id prefix
+            prefix = f"sessions/{user_id}/images/{doc_id}-page"
+        elif user_id == 'public':
             prefix = f"images/public/{doc_id}/"
         else:
             prefix = f"images/private/{user_id}/{doc_id}/"
@@ -125,22 +135,69 @@ def handler(event, context):
             # Upload to vector-files bucket
             vector_bucket = os.environ.get('VECTOR_BUCKET_NAME', os.environ.get('VECTOR_BUCKET', 'vector-files'))
             
-            # Upload index
-            index_key = f"private/{user_id}/{index_id}/index.index"
-            s3_client.upload_file(
-                str(index_path),
-                vector_bucket,
-                index_key
-            )
-            
-            # Upload metadata
-            meta_key = f"private/{user_id}/{index_id}/meta.json"
-            s3_client.upload_file(
-                str(meta_path),
-                vector_bucket,
-                meta_key,
-                ExtraArgs={'ContentType': 'application/json'}
-            )
+            # For session-based storage, we'll maintain a single index per session
+            if parts[0] == 'sessions':
+                # Load existing session index if exists
+                session_index_key = f"sessions/{user_id}/index.faiss"
+                session_meta_key = f"sessions/{user_id}/metadata.json"
+                
+                try:
+                    # Try to download existing index
+                    existing_index_path = temp_path / 'existing_index.faiss'
+                    existing_meta_path = temp_path / 'existing_meta.json'
+                    
+                    # Use source bucket for session data
+                    s3_client.download_file(source_bucket, session_index_key, str(existing_index_path))
+                    s3_client.download_file(source_bucket, session_meta_key, str(existing_meta_path))
+                    
+                    # Load and merge with existing index
+                    existing_index = faiss.read_index(str(existing_index_path))
+                    existing_index.add(index.reconstruct_n(0, index.ntotal))
+                    index = existing_index
+                    
+                    # Load and merge metadata
+                    with open(existing_meta_path, 'r') as f:
+                        existing_meta = json.load(f)
+                    # Update metadata with new document
+                    existing_meta['documents'][doc_id] = metadata
+                    metadata = existing_meta
+                except:
+                    # First document in session, create new metadata structure
+                    metadata = {
+                        'session_id': user_id,
+                        'documents': {
+                            doc_id: metadata
+                        }
+                    }
+                
+                # Upload unified session index to source bucket
+                s3_client.upload_file(
+                    str(index_path),
+                    source_bucket,
+                    session_index_key
+                )
+                s3_client.upload_file(
+                    str(meta_path),
+                    source_bucket,
+                    session_meta_key,
+                    ExtraArgs={'ContentType': 'application/json'}
+                )
+            else:
+                # Legacy per-document index upload
+                index_key = f"private/{user_id}/{index_id}/index.index"
+                s3_client.upload_file(
+                    str(index_path),
+                    vector_bucket,
+                    index_key
+                )
+                
+                meta_key = f"private/{user_id}/{index_id}/meta.json"
+                s3_client.upload_file(
+                    str(meta_path),
+                    vector_bucket,
+                    meta_key,
+                    ExtraArgs={'ContentType': 'application/json'}
+                )
             
             print(f"Successfully created document index {index_id} with {index.ntotal} vectors")
             

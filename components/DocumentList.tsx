@@ -8,6 +8,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
 import { toast } from 'sonner';
+import { useSession } from '@/contexts/SessionContext';
 
 interface Document {
   key: string;
@@ -23,13 +24,14 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const { sessionId } = useSession();
 
   const fetchDocuments = async () => {
     try {
       setLoading(true);
-      // List files in the public folder  
+      // List files in the session's documents folder  
       const result = await list({
-        path: `public/`,
+        path: `sessions/${sessionId}/documents/`,
         options: {
           listAll: true
         }
@@ -38,7 +40,7 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
       console.log('Storage list result:', result);
       
       const docs = result.items
-        .filter(item => item.path && item.path !== 'public/') // Filter out folder entries
+        .filter(item => item.path && !item.path.endsWith('/')) // Filter out folder entries
         .map(item => ({
           key: item.path,
           size: item.size,

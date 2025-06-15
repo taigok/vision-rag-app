@@ -57,13 +57,19 @@ def handler(event, context):
             'body': json.dumps({'error': 'Query is required'})
         }
     
-    # Get user ID from context (would come from auth in production)
-    user_id = body.get('userId', 'default')
+    # Get session ID from request
+    session_id = body.get('sessionId')
+    if not session_id:
+        return {
+            'statusCode': 400,
+            'body': json.dumps({'error': 'sessionId is required'})
+        }
+    
     top_k = body.get('topK', 5)
     
     try:
-        # Load and merge all individual indexes in real-time
-        index, metadata = load_and_merge_indexes_realtime()
+        # Load session-specific index
+        index, metadata = load_session_index(session_id)
         
         if index is None or index.ntotal == 0:
             return {
@@ -98,19 +104,30 @@ def handler(event, context):
                 continue
             
             # Find the image in metadata
-            for doc_id, doc_info in metadata.get('documents', {}).items():
-                for img in doc_info.get('images', []):
-                    if img.get('global_index') == idx:
+            # For session-based storage, metadata structure is different
+            documents = metadata.get('documents', {})
+            found = False
+            
+            for doc_id, doc_data in documents.items():
+                # Handle nested document structure from session metadata
+                images = doc_data.get('images', [])
+                for img in images:
+                    # Check if this is the image at the current index
+                    if img.get('index') == idx:
                         result_images.append({
                             'bucket': img.get('bucket'),
                             'key': img.get('key'),
                             'document_id': doc_id,
-                            'score': float(distances[0][len(result_images)])
+                            'score': float(distances[0][len(result_images) - 1])
                         })
+                        found = True
                         break
                 
-                if len(result_images) >= top_k:
+                if found:
                     break
+            
+            if len(result_images) >= top_k:
+                break
         
         # Download images for Gemini
         images_for_gemini = []
@@ -170,8 +187,46 @@ def handler(event, context):
             'body': json.dumps({'error': str(e)})
         }
 
+def load_session_index(session_id):
+    """Load unified index for a specific session"""
+    # For session-based storage, indexes are in the raw files bucket
+    raw_bucket = os.environ.get('SOURCE_BUCKET', 'raw-files')
+    
+    with tempfile.TemporaryDirectory() as temp_dir:
+        temp_path = Path(temp_dir)
+        
+        try:
+            # Download session index
+            index_key = f"sessions/{session_id}/index.faiss"
+            meta_key = f"sessions/{session_id}/metadata.json"
+            
+            index_path = temp_path / 'index.faiss'
+            meta_path = temp_path / 'metadata.json'
+            
+            # Try to download the session index
+            try:
+                s3_client.download_file(raw_bucket, index_key, str(index_path))
+                s3_client.download_file(raw_bucket, meta_key, str(meta_path))
+                
+                # Load index and metadata
+                index = faiss.read_index(str(index_path))
+                with open(meta_path, 'r') as f:
+                    metadata = json.load(f)
+                
+                print(f"Loaded session index with {index.ntotal} vectors")
+                return index, metadata
+                
+            except s3_client.exceptions.NoSuchKey:
+                # Session index doesn't exist yet
+                print(f"No index found for session {session_id}")
+                return None, None
+                
+        except Exception as e:
+            print(f"Error loading session index: {str(e)}")
+            return None, None
+
 def load_and_merge_indexes_realtime():
-    """Load and merge all individual indexes in real-time"""
+    """Legacy function - kept for backward compatibility"""
     vector_bucket = os.environ['VECTOR_BUCKET']
     
     with tempfile.TemporaryDirectory() as temp_dir:

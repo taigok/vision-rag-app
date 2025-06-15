@@ -58,12 +58,29 @@ rawFilesBucket.addEventNotification(
   new LambdaDestination(backend.convertWorker.resources.lambda),
   { prefix: 'private/', suffix: '.pptx' }
 );
+// Session-based document triggers
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'sessions/', suffix: '.pdf' }
+);
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'sessions/', suffix: '.pptx' }
+);
 
 // Images trigger embed-worker
 rawFilesBucket.addEventNotification(
   EventType.OBJECT_CREATED,
   new LambdaDestination(backend.embedWorker.resources.lambda),
   { prefix: 'images/' }
+);
+// Session-based images trigger
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.embedWorker.resources.lambda),
+  { prefix: 'sessions/', suffix: '.png' }
 );
 
 // Create REST API for search functionality

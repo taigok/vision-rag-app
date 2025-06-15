@@ -7,6 +7,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
 import { Upload } from 'lucide-react';
+import { useSession } from '@/contexts/SessionContext';
 
 interface FileUploadProps {
   onUploadComplete?: (key: string) => void;
@@ -17,6 +18,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [dragActive, setDragActive] = useState(false);
+  const { sessionId } = useSession();
 
   const handleDrag = useCallback((e: React.DragEvent) => {
     e.preventDefault();
@@ -65,8 +67,8 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
     setUploadProgress(0);
 
     try {
-      // Use public folder for now to avoid permission issues
-      const filePath = `public/${file.name}`;
+      // Use session-based path structure
+      const filePath = `sessions/${sessionId}/documents/${file.name}`;
       
       const result = await uploadData({
         path: filePath,
