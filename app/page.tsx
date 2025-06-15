@@ -85,10 +85,20 @@ function HomeContent() {
                 
                 {/* Documents List */}
                 <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <FileText className="h-4 w-4" />
-                    あなたの文書
-                  </h3>
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="text-lg font-semibold flex items-center gap-2">
+                      <FileText className="h-4 w-4" />
+                      あなたの文書
+                    </h3>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setRefreshKey(prev => prev + 1)}
+                      title="更新"
+                    >
+                      <RefreshCw className="h-4 w-4" />
+                    </Button>
+                  </div>
                   <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
                 </div>
               </div>

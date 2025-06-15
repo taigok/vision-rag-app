@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { list, remove } from 'aws-amplify/storage';
+import { list, remove, getUrl } from 'aws-amplify/storage';
 import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle } from 'lucide-react';
+import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
+import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle, Image, ZoomIn } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
 
@@ -16,6 +17,11 @@ interface Document {
   lastModified?: Date;
 }
 
+interface ImageFile {
+  key: string;
+  url: string;
+}
+
 interface DocumentListProps {
   refreshTrigger?: number;
   onIndexStatusChange?: (isReady: boolean, hasDocuments: boolean) => void;
@@ -23,9 +29,11 @@ interface DocumentListProps {
 
 export default function DocumentList({ refreshTrigger, onIndexStatusChange }: DocumentListProps) {
   const [documents, setDocuments] = useState<Document[]>([]);
+  const [images, setImages] = useState<ImageFile[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isIndexReady, setIsIndexReady] = useState(false);
+  const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const { sessionId } = useSession();
 
   const fetchDocuments = async () => {
@@ -51,6 +59,48 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
 
       setDocuments(docs);
       setError(null);
+      
+      // Fetch images if documents exist
+      if (docs.length > 0) {
+        try {
+          const imagesResult = await list({
+            path: `sessions/${sessionId}/images/`,
+            options: {
+              listAll: true
+            }
+          });
+          
+          const imageFiles = await Promise.all(
+            imagesResult.items
+              .filter(item => item.path && item.path.endsWith('.png'))
+              .map(async (item) => {
+                try {
+                  const imageUrl = await getUrl({
+                    path: item.path,
+                    options: {
+                      validateObjectExistence: false,
+                      expiresIn: 3600, // 1 hour
+                    },
+                  });
+                  return {
+                    key: item.path,
+                    url: imageUrl.url.toString(),
+                  };
+                } catch (error) {
+                  console.error('Failed to get image URL:', error);
+                  return null;
+                }
+              })
+          ).then(results => results.filter(Boolean) as ImageFile[]);
+          
+          setImages(imageFiles);
+        } catch (imageError) {
+          console.log('No images found yet');
+          setImages([]);
+        }
+      } else {
+        setImages([]);
+      }
       
       const hasDocuments = docs.length > 0;
       
@@ -101,7 +151,7 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
     fetchDocuments();
   }, [refreshTrigger]);
 
-  // Check only index status without refetching documents
+  // Check index status and update images
   const checkIndexStatus = async () => {
     try {
       const indexResult = await list({
@@ -111,6 +161,49 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
       if (indexExists !== isIndexReady) {
         setIsIndexReady(indexExists);
         onIndexStatusChange?.(indexExists, documents.length > 0);
+      }
+
+      // Also check for new images
+      if (documents.length > 0) {
+        try {
+          const imagesResult = await list({
+            path: `sessions/${sessionId}/images/`,
+            options: {
+              listAll: true
+            }
+          });
+          
+          const imageCount = imagesResult.items.filter(item => item.path && item.path.endsWith('.png')).length;
+          
+          if (imageCount !== images.length) {
+            const imageFiles = await Promise.all(
+              imagesResult.items
+                .filter(item => item.path && item.path.endsWith('.png'))
+                .map(async (item) => {
+                  try {
+                    const imageUrl = await getUrl({
+                      path: item.path,
+                      options: {
+                        validateObjectExistence: false,
+                        expiresIn: 3600, // 1 hour
+                      },
+                    });
+                    return {
+                      key: item.path,
+                      url: imageUrl.url.toString(),
+                    };
+                  } catch (error) {
+                    console.error('Failed to get image URL:', error);
+                    return null;
+                  }
+                })
+            ).then(results => results.filter(Boolean) as ImageFile[]);
+            
+            setImages(imageFiles);
+          }
+        } catch (imageError) {
+          // No images yet
+        }
       }
     } catch (indexError) {
       // Index file not found yet, keep current state
@@ -142,6 +235,7 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
       minute: '2-digit',
     });
   };
+
 
   if (loading) {
     return (
@@ -179,17 +273,6 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
 
   return (
     <div className="w-full">
-      <div className="flex justify-end mb-4">
-        <Button
-          variant="ghost"
-          size="icon"
-          onClick={fetchDocuments}
-          title="更新"
-        >
-          <RefreshCw className="h-4 w-4" />
-        </Button>
-      </div>
-
       <div className="space-y-2">
         {documents.map((doc) => (
           <div key={doc.key} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
@@ -239,6 +322,52 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
           </div>
         ))}
       </div>
+
+      {/* Images Gallery */}
+      {images.length > 0 && (
+        <div className="mt-6">
+          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
+            <Image className="h-4 w-4" />
+            変換された画像 ({images.length}枚)
+          </h4>
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+            {images.map((image, index) => (
+              <div
+                key={image.key}
+                className="relative aspect-square rounded-lg border bg-muted cursor-pointer hover:shadow-md transition-all group overflow-hidden"
+                onClick={() => setSelectedImage(image.url)}
+              >
+                <img
+                  src={image.url}
+                  alt={`Page ${index + 1}`}
+                  className="w-full h-full object-cover rounded-lg"
+                  loading="lazy"
+                />
+                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
+                  <ZoomIn className="h-6 w-6 text-white" />
+                </div>
+                <div className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-2 py-1 rounded">
+                  {index + 1}
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Image Modal */}
+      <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>
+        <DialogContent className="max-w-4xl w-full">
+          <DialogTitle className="sr-only">文書画像の拡大表示</DialogTitle>
+          {selectedImage && (
+            <img
+              src={selectedImage}
+              alt="Document page"
+              className="w-full h-auto max-h-[80vh] object-contain"
+            />
+          )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
