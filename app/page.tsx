@@ -7,13 +7,12 @@ import DocumentList from '@/components/DocumentList';
 import SearchInterface from '@/components/SearchInterface';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Upload, FileText, LogOut, RefreshCw } from 'lucide-react';
+import { Search, Upload, FileText, RefreshCw } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 
 function HomeContent() {
-  const { user, signOut } = useAuthenticator((context) => [context.user, context.signOut]);
+  const { user } = useAuthenticator((context) => [context.user]);
   const [refreshKey, setRefreshKey] = useState(0);
   const { sessionId, resetSession } = useSession();
 
@@ -32,39 +31,15 @@ function HomeContent() {
             <div className="flex items-center">
               <h1 className="text-2xl font-bold">Vision RAG</h1>
             </div>
-            <div className="flex items-center gap-4">
-              <div className="flex items-center gap-3">
-                <Avatar className="h-8 w-8">
-                  <AvatarFallback>
-                    {(user?.signInDetails?.loginId || user?.username || 'U').charAt(0).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div>
-                  <p className="text-sm text-muted-foreground">
-                    {user?.signInDetails?.loginId || user?.username}
-                  </p>
-                  <p className="text-xs text-muted-foreground">Session: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</p>
-                </div>
-              </div>
-              <Separator orientation="vertical" className="h-6" />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={resetSession}
-                title="Start new session"
-              >
-                <RefreshCw className="h-4 w-4 mr-2" />
-                New Session
-              </Button>
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={signOut}
-              >
-                <LogOut className="h-4 w-4 mr-2" />
-                Sign Out
-              </Button>
-            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={resetSession}
+              className="h-auto px-3 py-1 text-muted-foreground hover:text-foreground"
+            >
+              <span className="text-sm">セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</span>
+              <RefreshCw className="ml-2 h-3 w-3" />
+            </Button>
           </div>
         </div>
       </header>
@@ -73,10 +48,10 @@ function HomeContent() {
       <section className="py-6">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-3xl font-bold tracking-tight mb-3">
-            AI-Powered Document Search
+            AI文書検索システム
           </h2>
           <p className="text-lg text-muted-foreground max-w-3xl mx-auto">
-            Upload your documents and search their content with AI - it's that simple
+            文書をアップロードして、AIで内容を検索できます
           </p>
         </div>
       </section>
@@ -93,10 +68,10 @@ function HomeContent() {
                   1
                 </div>
                 <Upload className="h-5 w-5" />
-                Upload & Manage Documents
+                文書のアップロード・管理
               </CardTitle>
               <CardDescription>
-                Upload PDF or PowerPoint files (up to 50MB each) and view your document library
+                PDFやPowerPointファイル（各50MBまで）をアップロードして、文書ライブラリを表示
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -105,7 +80,7 @@ function HomeContent() {
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <Upload className="h-4 w-4" />
-                    Upload New Document
+                    新しい文書をアップロード
                   </h3>
                   <FileUpload onUploadComplete={handleUploadComplete} />
                 </div>
@@ -114,7 +89,7 @@ function HomeContent() {
                 <div>
                   <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
                     <FileText className="h-4 w-4" />
-                    Your Documents
+                    あなたの文書
                   </h3>
                   <DocumentList refreshTrigger={refreshKey} />
                 </div>
@@ -130,10 +105,10 @@ function HomeContent() {
                   2
                 </div>
                 <Search className="h-5 w-5" />
-                Search Your Documents
+                文書を検索
               </CardTitle>
               <CardDescription>
-                Ask questions about your uploaded documents and get AI-powered answers
+                アップロードした文書について質問して、AIによる回答を取得
               </CardDescription>
             </CardHeader>
             <CardContent>

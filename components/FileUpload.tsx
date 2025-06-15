@@ -135,10 +135,10 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             <Upload className="w-12 h-12 mb-4 text-muted-foreground" />
             
             <p className="mb-2 text-sm text-muted-foreground">
-              <span className="font-semibold">Click to upload</span> or drag and drop
+              <span className="font-semibold">クリックしてアップロード</span> またはドラッグ&ドロップ
             </p>
             <p className="text-xs text-muted-foreground">
-              PDF or PPTX (MAX. 50MB)
+              PDFまたはPPTX（最大50MB）
             </p>
           </label>
       </Card>
@@ -148,7 +148,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
         <div className="mt-4">
           <Progress value={uploadProgress} className="w-full" />
           <p className="mt-2 text-sm text-center text-muted-foreground">
-            Uploading... {uploadProgress}%
+            アップロード中... {uploadProgress}%
           </p>
         </div>
       )}

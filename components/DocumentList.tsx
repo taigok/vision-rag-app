@@ -99,7 +99,7 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
   if (loading) {
     return (
       <div className="text-center py-8">
-        <p className="text-muted-foreground">Loading documents...</p>
+        <p className="text-muted-foreground">文書を読み込み中...</p>
       </div>
     );
   }
@@ -113,7 +113,7 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
         </Alert>
         <div className="text-center">
           <Button onClick={fetchDocuments}>
-            Retry
+            再試行
           </Button>
         </div>
       </div>
@@ -124,7 +124,7 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
     return (
       <div className="text-center py-8">
         <p className="text-muted-foreground">
-          No documents uploaded yet.
+          まだ文書がアップロードされていません。
         </p>
       </div>
     );
@@ -137,7 +137,7 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
           variant="ghost"
           size="icon"
           onClick={fetchDocuments}
-          title="Refresh"
+          title="更新"
         >
           <RefreshCw className="h-4 w-4" />
         </Button>
@@ -176,15 +176,15 @@ export default function DocumentList({ refreshTrigger }: DocumentListProps) {
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>Delete Document</AlertDialogTitle>
+                    <AlertDialogTitle>文書を削除</AlertDialogTitle>
                     <AlertDialogDescription>
-                      Are you sure you want to delete this document? This action cannot be undone.
+                      この文書を削除してもよろしいですか？この操作は元に戻せません。
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>Cancel</AlertDialogCancel>
+                    <AlertDialogCancel>キャンセル</AlertDialogCancel>
                     <AlertDialogAction onClick={() => handleDelete(doc.key)}>
-                      Delete
+                      削除
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

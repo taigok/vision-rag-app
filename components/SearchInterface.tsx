@@ -93,7 +93,7 @@ export default function SearchInterface() {
               type="text"
               value={query}
               onChange={(e) => setQuery(e.target.value)}
-              placeholder="Ask a question about your documents..."
+              placeholder="文書について質問してください..."
               className="pr-10"
               disabled={loading}
             />
@@ -106,10 +106,10 @@ export default function SearchInterface() {
             {loading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                Searching...
+                検索中...
               </>
             ) : (
-              'Search'
+              '検索'
             )}
           </Button>
         </div>
@@ -129,7 +129,7 @@ export default function SearchInterface() {
           {/* AI Answer */}
           <Card>
             <CardHeader>
-              <CardTitle>AI Answer</CardTitle>
+              <CardTitle>AI回答</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-muted-foreground whitespace-pre-wrap">
