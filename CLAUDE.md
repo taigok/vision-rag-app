@@ -74,14 +74,17 @@ pytest --cov=amplify/functions --cov-report=html tests/
 
 # Rebuild and push embed-worker Lambda container image
 ./scripts/rebuild-embed-worker.sh
+
+# Rebuild and push search-router Lambda container image
+./scripts/rebuild-search-router.sh
 ```
 
-Note: Scripts use dynamic AWS account ID detection for portability across environments.
+Note: Scripts use dynamic AWS account ID detection and timestamp-based tagging for portability across environments.
 
 ### Debugging and Monitoring
 ```bash
 # View Lambda function logs (replace with actual function name)
-aws logs tail /aws/lambda/amplify-visionragapp-node-sa-EmbedWorkerV9* --since 10m
+aws logs tail /aws/lambda/amplify-visionragapp-node-sa-EmbedWorkerV10* --since 10m
 
 # List all Lambda log groups
 aws logs describe-log-groups --query 'logGroups[?contains(logGroupName, `ConvertWorker`) || contains(logGroupName, `EmbedWorker`) || contains(logGroupName, `SearchRouter`)].logGroupName'
@@ -95,7 +98,7 @@ curl -X POST "https://{api-id}.execute-api.ap-northeast-1.amazonaws.com/prod/sea
 ### Force Deployment
 To force Lambda function redeployment when code changes aren't detected:
 1. Update `CODE_VERSION` in respective resource files
-2. Update function name version (e.g., `V8` → `V9`)
+2. Update function name version (e.g., `V10` → `V11`)
 3. Commit changes to trigger Amplify sandbox deployment
 
 ## Key Implementation Notes
@@ -110,9 +113,18 @@ S3 event triggers are configured in `amplify/backend.ts` for session-based archi
 - All functions use the same bucket with session-based organization
 
 ### Container Image Deployment
-Both convert-worker and embed-worker functions use ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler, Cohere, Faiss). Use respective rebuild scripts to update images.
+All Lambda functions use ECR container images instead of ZIP packages due to system dependencies:
+- **convert-worker**: PyMuPDF, poppler-utils, PIL
+- **embed-worker**: Cohere, Faiss, PIL, numpy
+- **search-router**: Faiss, google-generativeai, PIL
 
-**Important**: Lambda functions do not use hardcoded bucket names in environment variables - they rely on dynamic bucket resolution at runtime for portability.
+Lambda functions do not use hardcoded bucket names in environment variables - they rely on dynamic bucket resolution at runtime for portability.
+
+### ECR Tag Management
+Scripts now generate timestamp-based tags (format: `YYYYMMDD-HHMMSS`) instead of using `latest`:
+- Tags are saved to `.ecr-tag` files in respective function directories
+- CDK automatically reads these tag files during deployment
+- Both timestamp tag and `latest` are pushed to ECR
 
 ### Environment Variables Required
 - `COHERE_API_KEY`: For embedding generation
@@ -145,7 +157,7 @@ Search functionality is exposed via API Gateway REST API (`/search` endpoint):
 ### Function Version Management
 Lambda functions use versioned deployments with `CODE_VERSION` environment variable:
 - Increment version numbers to force redeployment
-- Function names include version suffixes (e.g., `SearchRouterV4`, `EmbedWorkerV9`)
+- Function names include version suffixes (e.g., `SearchRouterV8`, `EmbedWorkerV10`)
 - Used for debugging and ensuring latest code is deployed
 
 ### Error Handling Strategy

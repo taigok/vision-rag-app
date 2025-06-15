@@ -2,6 +2,12 @@ import { defineStorage, defineFunction } from '@aws-amplify/backend';
 import { Function, Code, Runtime, Handler } from 'aws-cdk-lib/aws-lambda';
 import { Repository } from 'aws-cdk-lib/aws-ecr';
 import { Duration } from 'aws-cdk-lib';
+import * as fs from 'fs';
+import * as path from 'path';
+import { fileURLToPath } from 'url';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 // Define functions in storage resourceGroup for S3 triggers
 export const convertWorker = defineFunction((scope) => {
@@ -11,9 +17,16 @@ export const convertWorker = defineFunction((scope) => {
     'convert-worker'
   );
 
-  return new Function(scope, 'ConvertWorkerV2', {
+  // Read tag from file if exists, otherwise use latest
+  const tagFile = path.join(__dirname, '../../functions/convert-worker/.ecr-tag');
+  let tag = 'latest';
+  if (fs.existsSync(tagFile)) {
+    tag = fs.readFileSync(tagFile, 'utf-8').trim();
+  }
+
+  return new Function(scope, 'ConvertWorkerV3', {
     code: Code.fromEcrImage(ecrRepo, {
-      tagOrDigest: 'latest'
+      tagOrDigest: tag
     }),
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
@@ -35,14 +48,21 @@ export const embedWorker = defineFunction((scope) => {
     'embed-worker'
   );
 
-  return new Function(scope, 'EmbedWorkerV9', {
+  // Read tag from file if exists, otherwise use latest
+  const tagFile = path.join(__dirname, '../../functions/embed-worker/.ecr-tag');
+  let tag = 'latest';
+  if (fs.existsSync(tagFile)) {
+    tag = fs.readFileSync(tagFile, 'utf-8').trim();
+  }
+
+  return new Function(scope, 'EmbedWorkerV10', {
     code: Code.fromEcrImage(ecrRepo, {
-      tagOrDigest: 'latest'
+      tagOrDigest: tag
     }),
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      CODE_VERSION: '13', // Fix metadata structure error in embed-worker
+      CODE_VERSION: '14', // Force redeployment
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,

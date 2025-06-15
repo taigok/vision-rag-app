@@ -12,6 +12,7 @@ REGION="ap-northeast-1"
 ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REPO_NAME="embed-worker"
 ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}"
+TAG=$(date +%Y%m%d-%H%M%S)
 
 echo "📍 Working directory: $(pwd)"
 
@@ -38,19 +39,28 @@ fi
 docker buildx build --platform linux/amd64 --provenance=false \
     --build-arg COHERE_API_KEY="${COHERE_API_KEY}" \
     --build-arg GEMINI_API_KEY="${GEMINI_API_KEY}" \
-    -t ${REPO_NAME}:latest --load .
+    -t ${REPO_NAME}:${TAG} --load .
 
 # Step 5: Tag the image for ECR
-echo "🏷️  Tagging image for ECR..."
-docker tag ${REPO_NAME}:latest ${ECR_URI}:latest
+echo "🏷️  Tagging image for ECR with tag: ${TAG}..."
+docker tag ${REPO_NAME}:${TAG} ${ECR_URI}:${TAG}
+docker tag ${REPO_NAME}:${TAG} ${ECR_URI}:latest
 
 # Step 6: Push to ECR
 echo "📤 Pushing image to ECR..."
+docker push ${ECR_URI}:${TAG}
 docker push ${ECR_URI}:latest
 
+# Step 7: Save tag to file for CDK
+echo "💾 Saving tag to file..."
+TAG_FILE="${PROJECT_ROOT}/amplify/functions/embed-worker/.ecr-tag"
+echo ${TAG} > ${TAG_FILE}
+
 echo "✅ Embed-worker Docker image rebuild completed successfully!"
-echo "📋 Image URI: ${ECR_URI}:latest"
+echo "📋 Image URI: ${ECR_URI}:${TAG}"
+echo "🏷️  Tag: ${TAG}"
 echo ""
 echo "Next steps:"
-echo "1. Deploy with: npx ampx sandbox"
-echo "2. Test image upload to verify embed-worker triggers correctly"
+echo "1. Update amplify/storage/resource.ts with the new tag"
+echo "2. Deploy with 'npx ampx sandbox'"
+echo "3. Test image upload to verify embed-worker triggers correctly"
