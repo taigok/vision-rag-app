@@ -88,6 +88,9 @@ export const rawFiles = defineStorage({
     'sessions/*': [
       allow.authenticated.to(['read', 'write', 'delete'])
     ],
+    'samples/*': [
+      allow.authenticated.to(['read'])
+    ],
   }),
 });
 

@@ -76,6 +76,25 @@ rawFilesBucket.addEventNotification(
   { prefix: 'sessions/', suffix: '.png' }
 );
 
+// Sample document triggers (for permanent sample documents)
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'samples/', suffix: '.pdf' }
+);
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.convertWorker.resources.lambda),
+  { prefix: 'samples/', suffix: '.pptx' }
+);
+
+// Sample images trigger
+rawFilesBucket.addEventNotification(
+  EventType.OBJECT_CREATED,
+  new LambdaDestination(backend.embedWorker.resources.lambda),
+  { prefix: 'samples/', suffix: '.png' }
+);
+
 // Create REST API for search functionality
 const stack = Stack.of(backend.searchRouter.resources.lambda);
 const api = new RestApi(stack, 'VisionRAGApi', {

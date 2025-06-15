@@ -5,16 +5,22 @@ import { Authenticator } from '@aws-amplify/ui-react';
 import FileUpload from '@/components/FileUpload';
 import DocumentList from '@/components/DocumentList';
 import SearchInterface from '@/components/SearchInterface';
+import SampleDocumentSelector from '@/components/SampleDocumentSelector';
+import SampleDocumentViewer from '@/components/SampleDocumentViewer';
+import SampleSearchInterface from '@/components/SampleSearchInterface';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Upload, FileText, RefreshCw, Loader2, Trash2 } from 'lucide-react';
+import { Search, Upload, FileText, RefreshCw, Loader2, Trash2, BookOpen } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
+import { SampleDocument } from '@/lib/sample-documents';
 
 function HomeContent() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIndexReady, setIsIndexReady] = useState(false);
   const [hasDocuments, setHasDocuments] = useState(false);
+  const [selectedSampleDocument, setSelectedSampleDocument] = useState<SampleDocument | null>(null);
   const { sessionId, resetSession, clearSession, isResetting } = useSession();
 
   const handleUploadComplete = (key: string) => {
@@ -109,74 +115,138 @@ function HomeContent() {
 
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
+        <Tabs defaultValue="upload" className="w-full">
+          <TabsList>
+            <TabsTrigger value="upload" className="flex items-center gap-2">
+              <Upload className="h-4 w-4" />
+              自分の文書をアップロード
+            </TabsTrigger>
+            <TabsTrigger value="samples" className="flex items-center gap-2">
+              <BookOpen className="h-4 w-4" />
+              サンプル文書を試す
+            </TabsTrigger>
+          </TabsList>
 
-        <div className="grid gap-8">
-          {/* Step 1: Upload & Document Management */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
-                  1
-                </div>
-                <Upload className="h-5 w-5" />
-                文書のアップロード・管理
-              </CardTitle>
-              <CardDescription>
-                PDFやPowerPointファイル（50MBまで・1ファイル制限）をアップロードして、文書ライブラリを表示
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="grid lg:grid-cols-2 gap-8">
-                {/* Upload Area */}
-                <div>
-                  <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                    <Upload className="h-4 w-4" />
-                    新しい文書をアップロード
-                  </h3>
-                  <FileUpload onUploadComplete={handleUploadComplete} hasDocuments={hasDocuments} />
-                </div>
-                
-                {/* Documents List */}
-                <div>
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-lg font-semibold flex items-center gap-2">
-                      <FileText className="h-4 w-4" />
-                      あなたの文書
-                    </h3>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => setRefreshKey(prev => prev + 1)}
-                      title="更新"
-                    >
-                      <RefreshCw className="h-4 w-4" />
-                    </Button>
+          {/* アップロード・検索タブ */}
+          <TabsContent value="upload" className="space-y-8">
+            {/* Step 1: Upload & Document Management */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                    1
                   </div>
-                  <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
+                  <Upload className="h-5 w-5" />
+                  文書のアップロード・管理
+                </CardTitle>
+                <CardDescription>
+                  PDFやPowerPointファイル（50MBまで・1ファイル制限）をアップロードして、文書ライブラリを表示
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid lg:grid-cols-2 gap-8">
+                  {/* Upload Area */}
+                  <div>
+                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
+                      <Upload className="h-4 w-4" />
+                      新しい文書をアップロード
+                    </h3>
+                    <FileUpload onUploadComplete={handleUploadComplete} hasDocuments={hasDocuments} />
+                  </div>
+                  
+                  {/* Documents List */}
+                  <div>
+                    <div className="flex items-center justify-between mb-4">
+                      <h3 className="text-lg font-semibold flex items-center gap-2">
+                        <FileText className="h-4 w-4" />
+                        あなたの文書
+                      </h3>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setRefreshKey(prev => prev + 1)}
+                        title="更新"
+                      >
+                        <RefreshCw className="h-4 w-4" />
+                      </Button>
+                    </div>
+                    <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
+                  </div>
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
 
-          {/* Step 2: Search Section */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-3">
-                <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
-                  2
-                </div>
-                <Search className="h-5 w-5" />
-                文書を検索
-              </CardTitle>
-              <CardDescription>
-                アップロードした文書について質問して、AIによる回答を取得
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <SearchInterface isIndexReady={isIndexReady} hasDocuments={hasDocuments} />
-            </CardContent>
-          </Card>
-        </div>
+            {/* Step 2: Search Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                    2
+                  </div>
+                  <Search className="h-5 w-5" />
+                  文書を検索
+                </CardTitle>
+                <CardDescription>
+                  アップロードした文書について質問して、AIによる回答を取得
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SearchInterface isIndexReady={isIndexReady} hasDocuments={hasDocuments} />
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* サンプル文書タブ */}
+          <TabsContent value="samples" className="space-y-8">
+            {/* サンプル文書選択 */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                    1
+                  </div>
+                  <BookOpen className="h-5 w-5" />
+                  サンプル文書を選択
+                </CardTitle>
+                <CardDescription>
+                  事前に処理された文書から選択して、すぐに検索機能を試すことができます
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <SampleDocumentSelector 
+                  onSelect={setSelectedSampleDocument}
+                  selectedDocument={selectedSampleDocument}
+                />
+              </CardContent>
+            </Card>
+
+            {selectedSampleDocument && (
+              <>
+                {/* 選択された文書の画像表示 */}
+                <SampleDocumentViewer document={selectedSampleDocument} />
+
+                {/* 検索インターフェース */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-3">
+                      <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                        2
+                      </div>
+                      <Search className="h-5 w-5" />
+                      文書を検索
+                    </CardTitle>
+                    <CardDescription>
+                      選択したサンプル文書について質問して、AIによる回答を取得
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SampleSearchInterface selectedDocument={selectedSampleDocument} />
+                  </CardContent>
+                </Card>
+              </>
+            )}
+          </TabsContent>
+        </Tabs>
       </main>
     </div>
   );
