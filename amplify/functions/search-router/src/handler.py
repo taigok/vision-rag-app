@@ -47,6 +47,12 @@ def handler(event, context):
     except json.JSONDecodeError:
         return {
             'statusCode': 400,
+            'headers': {
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                'Content-Type': 'application/json'
+            },
             'body': json.dumps({'error': 'Invalid JSON in request body'})
         }
     
@@ -54,6 +60,12 @@ def handler(event, context):
     if not query:
         return {
             'statusCode': 400,
+            'headers': {
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                'Content-Type': 'application/json'
+            },
             'body': json.dumps({'error': 'Query is required'})
         }
     
@@ -62,6 +74,12 @@ def handler(event, context):
     if not session_id:
         return {
             'statusCode': 400,
+            'headers': {
+                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                'Content-Type': 'application/json'
+            },
             'body': json.dumps({'error': 'sessionId is required'})
         }
     
@@ -74,6 +92,12 @@ def handler(event, context):
         if index is None or index.ntotal == 0:
             return {
                 'statusCode': 404,
+                'headers': {
+                    'Access-Control-Allow-Origin': 'http://localhost:3000',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                    'Content-Type': 'application/json'
+                },
                 'body': json.dumps({'error': 'No documents indexed yet'})
             }
         
@@ -88,6 +112,12 @@ def handler(event, context):
         if query_embedding is None:
             return {
                 'statusCode': 500,
+                'headers': {
+                    'Access-Control-Allow-Origin': 'http://localhost:3000',
+                    'Access-Control-Allow-Methods': 'POST, OPTIONS',
+                    'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
+                    'Content-Type': 'application/json'
+                },
                 'body': json.dumps({'error': 'Failed to generate query embedding'})
             }
         

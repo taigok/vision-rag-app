@@ -19,7 +19,7 @@ export const searchRouter = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       RAW_FILES_BUCKET: 'amplify-visionragapp-node-s-rawfilesbucketb0479f06-w1m4dpdutqq3',
-      CODE_VERSION: '6', // Removed fallback embeddings and responses
+      CODE_VERSION: '7', // Fixed CORS headers for all responses
     },
     timeout: Duration.seconds(60),
     memorySize: 1024,
