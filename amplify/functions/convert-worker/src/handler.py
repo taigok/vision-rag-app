@@ -65,11 +65,8 @@ def handler(event, context):
             if PDF_AVAILABLE:
                 images = convert_pdf_with_pymupdf(input_file, temp_path)
             else:
-                print("PDF processing temporarily disabled - creating placeholder")
-                placeholder_image = Image.new('RGB', (1920, 1080), color='white')
-                image_path = temp_path / "page_0001.png"
-                placeholder_image.save(image_path)
-                images = [image_path]
+                print("PDF processing is not available - PyMuPDF not installed")
+                raise Exception("PDF processing is not available. Please install required dependencies.")
         elif file_extension in ['.pptx', '.ppt']:
             images = convert_pptx_to_images(input_file, temp_path)
         else:
@@ -174,11 +171,5 @@ def convert_pptx_to_images(pptx_path, output_dir):
     
     # This is a placeholder - actual implementation would require
     # additional dependencies like python-pptx or LibreOffice
-    print("PPTX conversion not implemented in this demo")
-    
-    # For now, create a dummy image
-    dummy_image = Image.new('RGB', (1920, 1080), color='white')
-    image_path = output_dir / "page_0001.png"
-    dummy_image.save(image_path)
-    
-    return [image_path]
+    print("PPTX conversion not implemented")
+    raise Exception("PPTX conversion is not implemented. Please implement PPTX processing functionality.")

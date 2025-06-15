@@ -42,8 +42,6 @@ export const embedWorker = defineFunction((scope) => {
     handler: Handler.FROM_IMAGE,
     runtime: Runtime.FROM_IMAGE,
     environment: {
-      VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       CODE_VERSION: '13', // Fix metadata structure error in embed-worker
     },
     timeout: Duration.seconds(300),
@@ -62,16 +60,13 @@ export const rawFiles = defineStorage({
       allow.entity('identity').to(['read', 'write', 'delete'])
     ],
     'public/*': [
-      allow.authenticated.to(['read', 'write', 'delete']),
-      allow.guest.to(['read', 'write', 'delete']) // Development only  
+      allow.authenticated.to(['read', 'write', 'delete'])
     ],
     'images/*': [
-      allow.authenticated.to(['read', 'write']),
-      allow.guest.to(['read', 'write']) // Development only
+      allow.authenticated.to(['read', 'write'])
     ],
     'sessions/*': [
-      allow.authenticated.to(['read', 'write', 'delete']),
-      allow.guest.to(['read', 'write', 'delete']) // Development only
+      allow.authenticated.to(['read', 'write', 'delete'])
     ],
   }),
 });

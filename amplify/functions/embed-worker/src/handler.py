@@ -269,12 +269,9 @@ def generate_image_embedding(image_path):
             if hasattr(cohere_error, 'response'):
                 print(f"Response status: {cohere_error.response.status_code}")
                 print(f"Response content: {cohere_error.response.text}")
-            print("Falling back to random embedding for demo purposes")
             
-            # Fallback to random embedding with correct dimension
-            embedding = np.random.randn(1536).astype('float32')
-            embedding = embedding / np.linalg.norm(embedding)
-            return embedding
+            # Raise error instead of using random embedding in production
+            raise Exception(f"Embedding generation failed: {cohere_error}")
         
     except Exception as e:
         print(f"Error generating embedding: {e}")

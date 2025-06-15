@@ -9,7 +9,7 @@ echo "🔧 Starting convert-worker Docker image rebuild..."
 
 # Variables
 REGION="ap-northeast-1"
-ACCOUNT_ID="401379601677"
+ACCOUNT_ID=$(aws sts get-caller-identity --query Account --output text)
 REPO_NAME="convert-worker"
 ECR_URI="${ACCOUNT_ID}.dkr.ecr.${REGION}.amazonaws.com/${REPO_NAME}"
 

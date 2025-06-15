@@ -66,7 +66,7 @@ const api = new RestApi(stack, 'VisionRAGApi', {
   restApiName: 'Vision RAG Search API - PDFやPowerPointの内容を画像化してベクトル検索し、AIが文書の内容について回答するシステム',
   description: 'API for searching documents with Vision RAG',
   defaultCorsPreflightOptions: {
-    allowOrigins: Cors.ALL_ORIGINS,
+    allowOrigins: ['https://your-production-domain.com', 'http://localhost:3000'],
     allowMethods: ['GET', 'POST', 'OPTIONS'],
     allowHeaders: ['Content-Type', 'Authorization', 'Accept'],
     allowCredentials: false,

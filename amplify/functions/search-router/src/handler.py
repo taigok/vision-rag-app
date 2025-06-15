@@ -38,9 +38,10 @@ def get_cors_headers(origin=None):
             'Access-Control-Allow-Credentials': 'false'
         }
     else:
-        # Default to localhost for development
+        # Configure specific allowed origins for production
+        # Replace with your actual production domain
         return {
-            'Access-Control-Allow-Origin': 'http://localhost:3000',
+            'Access-Control-Allow-Origin': 'https://your-production-domain.com',
             'Access-Control-Allow-Methods': 'POST, OPTIONS', 
             'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
             'Access-Control-Allow-Credentials': 'false'
@@ -146,7 +147,7 @@ def handler(event, context):
         
         # Get image information for top results
         result_images = []
-        for idx in indices[0]:
+        for i, idx in enumerate(indices[0]):
             if idx < 0:  # Invalid index
                 continue
             
@@ -165,7 +166,7 @@ def handler(event, context):
                             'bucket': img.get('bucket'),
                             'key': img.get('key'),
                             'document_id': doc_id,
-                            'score': float(distances[0][len(result_images) - 1])
+                            'score': float(distances[0][i])  # Use correct index i for distance
                         })
                         found = True
                         break
@@ -456,7 +457,7 @@ def generate_answer_with_gemini(query, images):
             return "No relevant images found to answer your query."
         
         # Initialize Gemini model (using vision model)
-        model = genai.GenerativeModel('gemini-1.5-flash')
+        model = genai.GenerativeModel('gemini-2.5-flash-preview-05-20')
         
         # Prepare prompt
         prompt = f"""あなたは文書ページを分析してユーザーの質問に答えるAIアシスタントです。
