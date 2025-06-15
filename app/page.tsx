@@ -1,22 +1,21 @@
 'use client';
 
 import { useState } from 'react';
-import { Authenticator, useAuthenticator } from '@aws-amplify/ui-react';
+import { Authenticator } from '@aws-amplify/ui-react';
 import FileUpload from '@/components/FileUpload';
 import DocumentList from '@/components/DocumentList';
 import SearchInterface from '@/components/SearchInterface';
 import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Search, Upload, FileText, RefreshCw } from 'lucide-react';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Search, Upload, FileText, RefreshCw, Loader2 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 
 function HomeContent() {
-  const { user } = useAuthenticator((context) => [context.user]);
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIndexReady, setIsIndexReady] = useState(false);
   const [hasDocuments, setHasDocuments] = useState(false);
-  const { sessionId, resetSession } = useSession();
+  const { sessionId, resetSession, isResetting } = useSession();
 
   const handleUploadComplete = (key: string) => {
     console.log('Upload completed:', key);
@@ -41,15 +40,48 @@ function HomeContent() {
           <p className="text-sm text-muted-foreground">PDFやパワポをアップロード→画像化・ベクトル化→質問すると関連画像をAIが参照して回答するデモアプリ</p>
         </div>
             </div>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={resetSession}
-              className="h-auto px-3 py-1 text-muted-foreground hover:text-foreground"
-            >
-              <span className="text-sm">セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</span>
-              <RefreshCw className="ml-2 h-3 w-3" />
-            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={isResetting}
+                  className="h-auto px-3 py-1 text-muted-foreground hover:text-foreground"
+                >
+                  <span className="text-sm">セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</span>
+                  {isResetting ? (
+                    <Loader2 className="ml-2 h-3 w-3 animate-spin" />
+                  ) : (
+                    <RefreshCw className="ml-2 h-3 w-3" />
+                  )}
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>セッションをリセット</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    現在のセッションをリセットしますか？
+                    <br />
+                    <strong>アップロードしたファイル、変換画像、インデックスがすべて削除されます。</strong>
+                    <br />
+                    この操作は元に戻せません。
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                  <AlertDialogAction onClick={resetSession} disabled={isResetting}>
+                    {isResetting ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        削除中...
+                      </>
+                    ) : (
+                      'リセット'
+                    )}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
           </div>
         </div>
       </header>
