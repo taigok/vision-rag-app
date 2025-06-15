@@ -38,27 +38,6 @@ rawFilesBucket.grantRead(backend.searchRouter.resources.lambda);
 
 // Configure S3 event notifications
 
-// PDF/PPTX files trigger convert-worker
-rawFilesBucket.addEventNotification(
-  EventType.OBJECT_CREATED,
-  new LambdaDestination(backend.convertWorker.resources.lambda),
-  { prefix: 'public/', suffix: '.pdf' }
-);
-rawFilesBucket.addEventNotification(
-  EventType.OBJECT_CREATED,
-  new LambdaDestination(backend.convertWorker.resources.lambda),
-  { prefix: 'private/', suffix: '.pdf' }
-);
-rawFilesBucket.addEventNotification(
-  EventType.OBJECT_CREATED,
-  new LambdaDestination(backend.convertWorker.resources.lambda),
-  { prefix: 'public/', suffix: '.pptx' }
-);
-rawFilesBucket.addEventNotification(
-  EventType.OBJECT_CREATED,
-  new LambdaDestination(backend.convertWorker.resources.lambda),
-  { prefix: 'private/', suffix: '.pptx' }
-);
 // Session-based document triggers
 rawFilesBucket.addEventNotification(
   EventType.OBJECT_CREATED,
@@ -71,12 +50,6 @@ rawFilesBucket.addEventNotification(
   { prefix: 'sessions/', suffix: '.pptx' }
 );
 
-// Images trigger embed-worker
-rawFilesBucket.addEventNotification(
-  EventType.OBJECT_CREATED,
-  new LambdaDestination(backend.embedWorker.resources.lambda),
-  { prefix: 'images/' }
-);
 // Session-based images trigger
 rawFilesBucket.addEventNotification(
   EventType.OBJECT_CREATED,
