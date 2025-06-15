@@ -76,6 +76,8 @@ pytest --cov=amplify/functions --cov-report=html tests/
 ./scripts/rebuild-embed-worker.sh
 ```
 
+Note: Scripts use dynamic AWS account ID detection for portability across environments.
+
 ### Debugging and Monitoring
 ```bash
 # View Lambda function logs (replace with actual function name)
@@ -110,6 +112,8 @@ S3 event triggers are configured in `amplify/backend.ts` for session-based archi
 ### Container Image Deployment
 Both convert-worker and embed-worker functions use ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler, Cohere, Faiss). Use respective rebuild scripts to update images.
 
+**Important**: Lambda functions do not use hardcoded bucket names in environment variables - they rely on dynamic bucket resolution at runtime for portability.
+
 ### Environment Variables Required
 - `COHERE_API_KEY`: For embedding generation
 - `GEMINI_API_KEY`: For AI response generation
@@ -134,7 +138,7 @@ The system uses session-based isolation to avoid conflicts between different use
 
 ### REST API Architecture
 Search functionality is exposed via API Gateway REST API (`/search` endpoint):
-- CORS configured for localhost:3000 development
+- CORS configured for specific domains (production-ready, no wildcard origins)
 - POST requests with JSON body: `{query, sessionId, topK}`
 - Returns AI-generated responses with source image references
 
@@ -145,10 +149,11 @@ Lambda functions use versioned deployments with `CODE_VERSION` environment varia
 - Used for debugging and ensuring latest code is deployed
 
 ### Error Handling Strategy
-Functions fail fast without fallback behavior:
-- No random embedding generation when APIs fail
-- No default responses when AI services are unavailable
+Functions fail fast without fallback behavior for production reliability:
+- No random embedding generation when APIs fail (removed demo fallbacks)
+- No placeholder image generation when document processing fails
 - Proper error propagation to frontend with specific error messages
+- Authentication required for all storage and data access (no guest permissions)
 
 ### Frontend Session Management
 - Session IDs stored in browser sessionStorage (tab-specific)
