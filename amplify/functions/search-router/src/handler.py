@@ -247,9 +247,16 @@ def load_session_index(session_id):
         temp_path = Path(temp_dir)
         
         try:
-            # Download session index
-            index_key = f"sessions/{session_id}/index.faiss"
-            meta_key = f"sessions/{session_id}/metadata.json"
+            # Determine the correct path based on session ID
+            if session_id.startswith('sample-'):
+                # Sample document
+                sample_id = session_id[7:]  # Remove 'sample-' prefix
+                index_key = f"samples/{sample_id}/index.faiss"
+                meta_key = f"samples/{sample_id}/metadata.json"
+            else:
+                # Regular session
+                index_key = f"sessions/{session_id}/index.faiss"
+                meta_key = f"sessions/{session_id}/metadata.json"
             
             index_path = temp_path / 'index.faiss'
             meta_path = temp_path / 'metadata.json'

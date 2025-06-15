@@ -57,7 +57,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
         body: JSON.stringify({
           query: query.trim(),
           topK: 3,
-          sessionId: `samples/${selectedDocument.id}`, // サンプル文書のS3パスに合わせる
+          sessionId: `sample-${selectedDocument.id}`, // サンプル文書用のセッションID
         }),
       });
 
