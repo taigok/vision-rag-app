@@ -35,7 +35,7 @@ export const embedWorker = defineFunction((scope) => {
     'embed-worker'
   );
 
-  return new Function(scope, 'EmbedWorkerV6', {
+  return new Function(scope, 'EmbedWorkerV7', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
@@ -44,7 +44,7 @@ export const embedWorker = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      CODE_VERSION: '10', // Session-only architecture, removed public/private legacy
+      CODE_VERSION: '11', // Force redeploy - Session-only architecture, removed public/private legacy
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,
