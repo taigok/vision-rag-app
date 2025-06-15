@@ -69,7 +69,7 @@ function HomeContent() {
                 文書のアップロード・管理
               </CardTitle>
               <CardDescription>
-                PDFやPowerPointファイル（各50MBまで）をアップロードして、文書ライブラリを表示
+                PDFやPowerPointファイル（50MBまで・1ファイル制限）をアップロードして、文書ライブラリを表示
               </CardDescription>
             </CardHeader>
             <CardContent>
@@ -80,7 +80,7 @@ function HomeContent() {
                     <Upload className="h-4 w-4" />
                     新しい文書をアップロード
                   </h3>
-                  <FileUpload onUploadComplete={handleUploadComplete} />
+                  <FileUpload onUploadComplete={handleUploadComplete} hasDocuments={hasDocuments} />
                 </div>
                 
                 {/* Documents List */}

@@ -63,7 +63,7 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
         },
         body: JSON.stringify({
           query: query.trim(),
-          topK: 5,
+          topK: 3,
           sessionId: sessionId,
         }),
       });

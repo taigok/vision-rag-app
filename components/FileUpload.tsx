@@ -11,9 +11,10 @@ import { useSession } from '@/contexts/SessionContext';
 
 interface FileUploadProps {
   onUploadComplete?: (key: string) => void;
+  hasDocuments?: boolean;
 }
 
-export default function FileUpload({ onUploadComplete }: FileUploadProps) {
+export default function FileUpload({ onUploadComplete, hasDocuments = false }: FileUploadProps) {
   const [isUploading, setIsUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [error, setError] = useState<string | null>(null);
@@ -48,17 +49,24 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
   };
 
   const handleFile = async (file: File) => {
+    // Check if documents already exist (single file limit)
+    if (hasDocuments) {
+      setError('1つのファイルのみアップロード可能です。既存の文書を削除してから新しいファイルをアップロードしてください。');
+      toast.error('1ファイル制限: 既存の文書を削除してください');
+      return;
+    }
+
     // Validate file type
     const validTypes = ['application/pdf', 'application/vnd.openxmlformats-officedocument.presentationml.presentation'];
     if (!validTypes.includes(file.type)) {
-      setError('Please upload a PDF or PPTX file');
+      setError('PDFまたはPPTXファイルをアップロードしてください');
       return;
     }
 
     // Validate file size (max 50MB)
     const maxSize = 50 * 1024 * 1024;
     if (file.size > maxSize) {
-      setError('File size must be less than 50MB');
+      setError('ファイルサイズは50MB未満である必要があります');
       return;
     }
 
@@ -98,7 +106,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
       }, 1000);
     } catch (error) {
       console.error('Upload failed:', error);
-      const errorMessage = 'Upload failed. Please try again.';
+      const errorMessage = 'アップロードに失敗しました。もう一度お試しください。';
       setError(errorMessage);
       toast.error(errorMessage);
       setIsUploading(false);
@@ -113,7 +121,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
           dragActive
             ? 'border-primary bg-primary/5'
             : 'border-muted-foreground/25'
-        } ${isUploading ? 'pointer-events-none opacity-60' : ''}`}
+        } ${isUploading || hasDocuments ? 'pointer-events-none opacity-60' : ''}`}
         onDragEnter={handleDrag}
         onDragLeave={handleDrag}
         onDragOver={handleDrag}
@@ -125,7 +133,7 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             className="hidden"
             accept=".pdf,.pptx"
             onChange={handleChange}
-            disabled={isUploading}
+            disabled={isUploading || hasDocuments}
           />
           
           <label
@@ -135,13 +143,19 @@ export default function FileUpload({ onUploadComplete }: FileUploadProps) {
             <Upload className="w-8 h-8 sm:w-10 sm:h-10 mb-2 sm:mb-3 text-muted-foreground" />
             
             <p className="text-sm sm:text-base text-muted-foreground text-center leading-tight mb-1">
-              <span className="font-semibold">クリックしてアップロード</span>
-              <br className="sm:hidden" />
-              <span className="hidden sm:inline"> または</span>
-              <span className="sm:hidden"> / </span>ドラッグ&ドロップ
+              <span className="font-semibold">
+                {hasDocuments ? '1ファイル制限に達しました' : 'クリックしてアップロード'}
+              </span>
+              {!hasDocuments && (
+                <>
+                  <br className="sm:hidden" />
+                  <span className="hidden sm:inline"> または</span>
+                  <span className="sm:hidden"> / </span>ドラッグ&ドロップ
+                </>
+              )}
             </p>
             <p className="text-xs sm:text-sm text-muted-foreground">
-              PDF・PPTX（最大50MB）
+              {hasDocuments ? '既存の文書を削除して新しいファイルをアップロード' : 'PDF・PPTX（最大50MB・1ファイル制限）'}
             </p>
           </label>
       </Card>

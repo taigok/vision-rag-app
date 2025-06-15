@@ -39,10 +39,15 @@ def handler(event, context):
         print(f"Invalid key format: {source_key}")
         return
     
-    # Check if this is a new document (first page)
-    if not (source_key.endswith('page0001.png') or source_key.endswith('page_0001.png')):
+    # Process document when any page is created (but avoid duplicate processing)
+    # Extract page number to determine if this is the first page of a document
+    is_first_page = (source_key.endswith('page0001.png') or source_key.endswith('page_0001.png'))
+    
+    if not is_first_page:
         print(f"Skipping non-first page: {source_key}")
         return
+    
+    print(f"Processing first page of document {doc_id}: {source_key}")
     
     # Process all images for this document
     with tempfile.TemporaryDirectory() as temp_dir:
