@@ -33,7 +33,7 @@ def handler(event, context):
         return {
             'statusCode': 200,
             'headers': {
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                 'Access-Control-Allow-Credentials': 'false'
@@ -48,7 +48,7 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                 'Content-Type': 'application/json'
@@ -61,7 +61,7 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                 'Content-Type': 'application/json'
@@ -75,7 +75,7 @@ def handler(event, context):
         return {
             'statusCode': 400,
             'headers': {
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                 'Content-Type': 'application/json'
@@ -93,7 +93,7 @@ def handler(event, context):
             return {
                 'statusCode': 404,
                 'headers': {
-                    'Access-Control-Allow-Origin': 'http://localhost:3000',
+                    'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'POST, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                     'Content-Type': 'application/json'
@@ -113,7 +113,7 @@ def handler(event, context):
             return {
                 'statusCode': 500,
                 'headers': {
-                    'Access-Control-Allow-Origin': 'http://localhost:3000',
+                    'Access-Control-Allow-Origin': '*',
                     'Access-Control-Allow-Methods': 'POST, OPTIONS',
                     'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept',
                     'Content-Type': 'application/json'
@@ -197,7 +197,7 @@ def handler(event, context):
             'statusCode': 200,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
             },
@@ -210,7 +210,7 @@ def handler(event, context):
             'statusCode': 500,
             'headers': {
                 'Content-Type': 'application/json',
-                'Access-Control-Allow-Origin': 'http://localhost:3000',
+                'Access-Control-Allow-Origin': '*',
                 'Access-Control-Allow-Methods': 'POST, OPTIONS',
                 'Access-Control-Allow-Headers': 'Content-Type, Authorization, Accept'
             },

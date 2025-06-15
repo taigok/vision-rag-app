@@ -4,32 +4,38 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-This is a Vision RAG (Retrieval-Augmented Generation) application built with AWS Amplify Gen 2. The system processes PDF/PPTX documents by converting them to images, generating vector embeddings, and enabling semantic search with AI-powered responses.
+This is a Vision RAG (Retrieval-Augmented Generation) application built with AWS Amplify Gen 2. The system processes PDF/PPTX documents by converting them to images, generating vector embeddings, and enabling semantic search with AI-powered responses using a session-based architecture.
 
 ## Architecture
 
-The application follows a serverless pipeline architecture:
+The application follows a serverless pipeline architecture with session-based isolation:
 
-1. **Document Upload** → `raw-files` S3 bucket
+1. **Document Upload** → `sessions/{sessionId}/documents/` in S3 bucket
 2. **Image Conversion** → `convert-worker` Lambda (PDF/PPTX → PNG images)
-3. **Vector Generation** → `embed-worker` Lambda (Images → Faiss index)
-4. **Index Consolidation** → `index-merger` Lambda (Periodic merge of indexes)
-5. **Search & Response** → `search-router` Lambda (Query → AI response)
+3. **Vector Generation** → `embed-worker` Lambda (Images → unified session Faiss index)
+4. **Search & Response** → `search-router` Lambda (Query → AI response via REST API)
 
-### Storage Structure
-- `rawFiles` (default): Original PDF/PPTX uploads and converted images in single bucket
-  - `public/` - PDF/PPTX files uploaded by users
-  - `private/{userId}/` - User-specific uploads
-  - `images/{userId}/{docId}/` - Converted PNG images from documents
-- `vectorFiles`: Faiss indexes and metadata (versioned)
+### Storage Structure (Session-Based)
+- `rawFiles` (default bucket): Session-isolated document processing
+  - `sessions/{sessionId}/documents/` - PDF/PPTX files uploaded by users
+  - `sessions/{sessionId}/images/` - Converted PNG images from documents
+  - `sessions/{sessionId}/index.faiss` - Unified Faiss index per session
+  - `sessions/{sessionId}/metadata.json` - Session metadata with document mapping
+- `vectorFiles`: Legacy storage (no longer used in current architecture)
 
 ### Lambda Functions (Python 3.12)
-Convert-worker and embed-worker are in the `storage` resourceGroup to enable S3 triggers; other functions are in the `functions` resourceGroup:
+Convert-worker and embed-worker are in the `storage` resourceGroup to enable S3 triggers; search-router is in the `functions` resourceGroup:
 
-- **convert-worker**: Converts documents to images using PyMuPDF/pdf2image
-- **embed-worker**: Generates embeddings with Cohere, creates Faiss indexes
-- **index-merger**: Merges individual indexes into master index (runs every 15 min)
-- **search-router**: Handles search queries, uses Gemini Vision Pro for responses
+- **convert-worker**: Converts documents to images using PyMuPDF, triggers on `sessions/` prefix
+- **embed-worker**: Generates embeddings with Cohere, maintains unified session indexes
+- **search-router**: Handles search queries via REST API, uses Gemini Vision Pro for responses
+
+### Frontend Technology Stack
+- **Next.js 15** with App Router and Turbopack for development
+- **React 19** with TypeScript
+- **Tailwind CSS 4** for styling with shadcn/ui components
+- **AWS Amplify Gen 2** client libraries for storage and authentication
+- **Session-based state management** with React Context and sessionStorage
 
 ## Development Commands
 
@@ -70,16 +76,36 @@ pytest --cov=amplify/functions --cov-report=html tests/
 ./scripts/rebuild-embed-worker.sh
 ```
 
+### Debugging and Monitoring
+```bash
+# View Lambda function logs (replace with actual function name)
+aws logs tail /aws/lambda/amplify-visionragapp-node-sa-EmbedWorkerV9* --since 10m
+
+# List all Lambda log groups
+aws logs describe-log-groups --query 'logGroups[?contains(logGroupName, `ConvertWorker`) || contains(logGroupName, `EmbedWorker`) || contains(logGroupName, `SearchRouter`)].logGroupName'
+
+# Test search API directly
+curl -X POST "https://{api-id}.execute-api.ap-northeast-1.amazonaws.com/prod/search" \
+  -H "Content-Type: application/json" \
+  -d '{"query":"test","sessionId":"test-session","topK":5}'
+```
+
+### Force Deployment
+To force Lambda function redeployment when code changes aren't detected:
+1. Update `CODE_VERSION` in respective resource files
+2. Update function name version (e.g., `V8` → `V9`)
+3. Commit changes to trigger Amplify sandbox deployment
+
 ## Key Implementation Notes
 
 ### Function Definitions
 All Lambda functions use custom CDK definitions with `defineFunction((scope) => ...)` pattern and `resourceGroupName: 'storage'` to prevent CloudFormation circular dependencies.
 
-### S3 Triggers and Permissions
-S3 event triggers are configured natively in Amplify using path-specific triggers in `amplify/storage/resource.ts`:
-- PDF/PPTX files in `public/` and `private/` folders trigger convert-worker
-- PNG files in `images/` folder trigger embed-worker
-- All functions use the same bucket with folder-based organization
+### S3 Triggers and Permissions (Session-Based)
+S3 event triggers are configured in `amplify/backend.ts` for session-based architecture:
+- PDF/PPTX files in `sessions/` folder trigger convert-worker
+- PNG files in `sessions/` folder trigger embed-worker  
+- All functions use the same bucket with session-based organization
 
 ### Container Image Deployment
 Both convert-worker and embed-worker functions use ECR container images instead of ZIP packages due to system dependencies (PIL, PyMuPDF, poppler, Cohere, Faiss). Use respective rebuild scripts to update images.
@@ -99,25 +125,32 @@ Lambda code assets use absolute paths: `'amplify/functions/[function-name]/src'`
 
 ## Important Implementation Patterns
 
-### Single Bucket Architecture
-The system uses a single S3 bucket (`rawFiles`) with folder-based organization instead of separate buckets to avoid circular dependencies:
-- Original files: `public/` and `private/{userId}/`
-- Generated images: `images/{userId}/{docId}/`
-- This allows convert-worker to write images to the same bucket it reads from
+### Session-Based Architecture
+The system uses session-based isolation to avoid conflicts between different user sessions:
+- Each browser session gets a unique ID: `{timestamp}-{randomUUID}`
+- All files are stored under `sessions/{sessionId}/` prefix
+- Each session maintains its own unified Faiss index and metadata
+- Search queries are isolated to the specific session
 
-### Circular Dependency Resolution
-Three patterns identified for avoiding CloudFormation circular dependencies:
-- **Pattern A**: Move all related functions to same resourceGroup (`storage`)
-- **Pattern B**: Use EventBridge for loose coupling
-- **Pattern C**: Manual CLI configuration post-deployment
+### REST API Architecture
+Search functionality is exposed via API Gateway REST API (`/search` endpoint):
+- CORS configured for localhost:3000 development
+- POST requests with JSON body: `{query, sessionId, topK}`
+- Returns AI-generated responses with source image references
 
-Current implementation uses Pattern A with convert-worker and embed-worker in `storage` resourceGroup.
+### Function Version Management
+Lambda functions use versioned deployments with `CODE_VERSION` environment variable:
+- Increment version numbers to force redeployment
+- Function names include version suffixes (e.g., `SearchRouterV4`, `EmbedWorkerV9`)
+- Used for debugging and ensuring latest code is deployed
 
-### Image Processing Flow Control
-Convert-worker includes filtering logic to prevent recursive processing:
-```python
-if parts[0] == 'images':
-    print(f"Skipping image file: {source_key}")
-    return
-```
-This prevents convert-worker from processing its own generated images.
+### Error Handling Strategy
+Functions fail fast without fallback behavior:
+- No random embedding generation when APIs fail
+- No default responses when AI services are unavailable
+- Proper error propagation to frontend with specific error messages
+
+### Frontend Session Management
+- Session IDs stored in browser sessionStorage (tab-specific)
+- UI components handle session context via React Context
+- Upload and search operations include sessionId parameter
