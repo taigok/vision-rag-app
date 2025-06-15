@@ -6,10 +6,10 @@ import { auth } from './auth/resource';
 import { data } from './data/resource';
 import { rawFiles, convertWorker, embedWorker } from './storage/resource';
 import { searchRouter } from './functions/search-router/resource';
-import { EventType } from 'aws-cdk-lib/aws-s3';
+import { EventType, LifecycleRule } from 'aws-cdk-lib/aws-s3';
 import { LambdaDestination } from 'aws-cdk-lib/aws-s3-notifications';
 import { RestApi, LambdaIntegration, Cors } from 'aws-cdk-lib/aws-apigateway';
-import { Stack } from 'aws-cdk-lib';
+import { Stack, Duration } from 'aws-cdk-lib';
 
 /**
  * @see https://docs.amplify.aws/react/build-a-backend/ to add storage, functions, and more
@@ -25,6 +25,20 @@ const backend = defineBackend({
 
 // Configure S3 event notifications for Lambda triggers
 const rawFilesBucket = backend.rawFiles.resources.bucket;
+
+// Add lifecycle rule to automatically delete session files after 1 day
+const s3Bucket = rawFilesBucket.node.defaultChild as any;
+s3Bucket.addPropertyOverride('LifecycleConfiguration', {
+  Rules: [{
+    Id: 'DeleteSessionFilesAfter1Day',
+    Status: 'Enabled',
+    Prefix: 'sessions/',
+    ExpirationInDays: 1,
+    AbortIncompleteMultipartUpload: {
+      DaysAfterInitiation: 1
+    }
+  }]
+});
 
 // Grant permissions for convert-worker and embed-worker (same resourceGroup as storage)
 rawFilesBucket.grantRead(backend.convertWorker.resources.lambda);
