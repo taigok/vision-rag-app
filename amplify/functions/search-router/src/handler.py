@@ -190,7 +190,9 @@ def handler(event, context):
 def load_session_index(session_id):
     """Load unified index for a specific session"""
     # For session-based storage, indexes are in the raw files bucket
-    raw_bucket = os.environ.get('SOURCE_BUCKET', 'raw-files')
+    # Get the bucket name from environment or use the bucket that triggered this
+    raw_bucket = os.environ.get('AMPLIFY_STORAGE_BUCKET_NAME', 
+                               os.environ.get('SOURCE_BUCKET', 'raw-files'))
     
     with tempfile.TemporaryDirectory() as temp_dir:
         temp_path = Path(temp_dir)

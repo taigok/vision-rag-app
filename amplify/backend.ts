@@ -29,6 +29,7 @@ const vectorFilesBucket = backend.vectorFiles.resources.bucket;
 rawFilesBucket.grantRead(backend.convertWorker.resources.lambda);
 rawFilesBucket.grantWrite(backend.convertWorker.resources.lambda);  // Allow writing images/ folder to same bucket
 rawFilesBucket.grantRead(backend.embedWorker.resources.lambda);   // Read images from same bucket
+rawFilesBucket.grantWrite(backend.embedWorker.resources.lambda);  // Write session indexes to same bucket
 vectorFilesBucket.grantWrite(backend.embedWorker.resources.lambda);
 
 // Grant permissions for search-router

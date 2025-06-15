@@ -11,7 +11,7 @@ export const convertWorker = defineFunction((scope) => {
     'convert-worker'
   );
 
-  return new Function(scope, 'ConvertWorker', {
+  return new Function(scope, 'ConvertWorkerV2', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
@@ -35,7 +35,7 @@ export const embedWorker = defineFunction((scope) => {
     'embed-worker'
   );
 
-  return new Function(scope, 'EmbedWorkerV5', {
+  return new Function(scope, 'EmbedWorkerV6', {
     code: Code.fromEcrImage(ecrRepo, {
       tagOrDigest: 'latest'
     }),
@@ -44,7 +44,7 @@ export const embedWorker = defineFunction((scope) => {
     environment: {
       VECTOR_BUCKET_NAME: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
       VECTOR_BUCKET: 'amplify-visionragapp-node-vectorfilesbucketa77f356-ztjiv9yb4lwz',
-      CODE_VERSION: '8', // One index per document with all page vectors
+      CODE_VERSION: '9', // Session-based unified index per session
     },
     timeout: Duration.seconds(300),
     memorySize: 1024,

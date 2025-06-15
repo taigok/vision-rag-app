@@ -170,6 +170,11 @@ def handler(event, context):
                         }
                     }
                 
+                # Save updated index and metadata
+                faiss.write_index(index, str(index_path))
+                with open(meta_path, 'w') as f:
+                    json.dump(metadata, f)
+                
                 # Upload unified session index to source bucket
                 s3_client.upload_file(
                     str(index_path),
