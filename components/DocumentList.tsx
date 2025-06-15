@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
-import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle, Image, ZoomIn } from 'lucide-react';
+import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle, Image, ZoomIn, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
 
@@ -34,6 +34,7 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
   const [error, setError] = useState<string | null>(null);
   const [isIndexReady, setIsIndexReady] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
+  const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
   const { sessionId } = useSession();
 
   const fetchDocuments = async () => {
@@ -133,17 +134,25 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
 
   const handleDelete = async (key: string) => {
     try {
+      setDeletingFiles(prev => new Set(prev).add(key));
+      
       await remove({
         path: key,
       });
 
       // Refresh the list
       await fetchDocuments();
-      toast.success('Document deleted successfully');
+      toast.success('ファイルを削除しました');
     } catch (error) {
       console.error('Failed to delete document:', error);
-      setError('Failed to delete document');
-      toast.error('Failed to delete document');
+      setError('ファイルの削除に失敗しました');
+      toast.error('ファイルの削除に失敗しました');
+    } finally {
+      setDeletingFiles(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(key);
+        return newSet;
+      });
     }
   };
 
@@ -300,21 +309,50 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
                     variant="ghost"
                     size="icon"
                     className="text-destructive hover:text-destructive"
+                    disabled={deletingFiles.has(doc.key)}
                   >
-                    <Trash2 className="h-4 w-4" />
+                    {deletingFiles.has(doc.key) ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="h-4 w-4" />
+                    )}
                   </Button>
                 </AlertDialogTrigger>
                 <AlertDialogContent>
                   <AlertDialogHeader>
-                    <AlertDialogTitle>文書を削除</AlertDialogTitle>
+                    <AlertDialogTitle>ファイルを削除</AlertDialogTitle>
                     <AlertDialogDescription>
-                      この文書を削除してもよろしいですか？この操作は元に戻せません。
+                      <strong>「{doc.key.split('/').pop() || doc.key}」</strong>を削除してもよろしいですか？
+                      <br />
+                      <br />
+                      このファイルに関連する以下のデータもすべて削除されます：
+                      <br />
+                      • 変換された画像ファイル
+                      <br />
+                      • 検索インデックスデータ  
+                      <br />
+                      <br />
+                      <span className="text-destructive font-medium">この操作は元に戻せません。</span>
                     </AlertDialogDescription>
                   </AlertDialogHeader>
                   <AlertDialogFooter>
-                    <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                    <AlertDialogAction onClick={() => handleDelete(doc.key)}>
-                      削除
+                    <AlertDialogCancel disabled={deletingFiles.has(doc.key)}>キャンセル</AlertDialogCancel>
+                    <AlertDialogAction 
+                      onClick={() => handleDelete(doc.key)}
+                      disabled={deletingFiles.has(doc.key)}
+                      className="bg-destructive hover:bg-destructive/90"
+                    >
+                      {deletingFiles.has(doc.key) ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          削除中...
+                        </>
+                      ) : (
+                        <>
+                          <Trash2 className="mr-2 h-4 w-4" />
+                          削除する
+                        </>
+                      )}
                     </AlertDialogAction>
                   </AlertDialogFooter>
                 </AlertDialogContent>

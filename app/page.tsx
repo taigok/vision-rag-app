@@ -8,14 +8,14 @@ import SearchInterface from '@/components/SearchInterface';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
-import { Search, Upload, FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { Search, Upload, FileText, RefreshCw, Loader2, Trash2 } from 'lucide-react';
 import { useSession } from '@/contexts/SessionContext';
 
 function HomeContent() {
   const [refreshKey, setRefreshKey] = useState(0);
   const [isIndexReady, setIsIndexReady] = useState(false);
   const [hasDocuments, setHasDocuments] = useState(false);
-  const { sessionId, resetSession, isResetting } = useSession();
+  const { sessionId, resetSession, clearSession, isResetting } = useSession();
 
   const handleUploadComplete = (key: string) => {
     console.log('Upload completed:', key);
@@ -28,6 +28,14 @@ function HomeContent() {
     setHasDocuments(hasDocsValue);
   };
 
+  const handleClearSession = async () => {
+    await clearSession();
+    // Reset UI state after clearing session
+    setIsIndexReady(false);
+    setHasDocuments(false);
+    setRefreshKey(prev => prev + 1);
+  };
+
   return (
     <div className="min-h-screen bg-background">
       {/* Header */}
@@ -36,52 +44,62 @@ function HomeContent() {
           <div className="flex justify-between items-center py-4">
             <div className="flex items-center">
               <div>
-          <h1 className="text-2xl font-bold">Vision RAG</h1>
-          <p className="text-sm text-muted-foreground">PDFやパワポをアップロード→画像化・ベクトル化→質問すると関連画像をAIが参照して回答するデモアプリ</p>
-        </div>
+                <h1 className="text-2xl font-bold">Vision RAG</h1>
+                <p className="text-sm text-muted-foreground">PDFやパワポをアップロード→画像化・ベクトル化→質問すると関連画像をAIが参照して回答するデモアプリ</p>
+              </div>
             </div>
-            <AlertDialog>
-              <AlertDialogTrigger asChild>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  disabled={isResetting}
-                  className="h-auto px-3 py-1 text-muted-foreground hover:text-foreground"
-                >
-                  <span className="text-sm">セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}</span>
-                  {isResetting ? (
-                    <Loader2 className="ml-2 h-3 w-3 animate-spin" />
-                  ) : (
-                    <RefreshCw className="ml-2 h-3 w-3" />
-                  )}
-                </Button>
-              </AlertDialogTrigger>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>セッションをリセット</AlertDialogTitle>
-                  <AlertDialogDescription>
-                    現在のセッションをリセットしますか？
-                    <br />
-                    <strong>アップロードしたファイル、変換画像、インデックスがすべて削除されます。</strong>
-                    <br />
-                    この操作は元に戻せません。
-                  </AlertDialogDescription>
-                </AlertDialogHeader>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>キャンセル</AlertDialogCancel>
-                  <AlertDialogAction onClick={resetSession} disabled={isResetting}>
-                    {isResetting ? (
-                      <>
-                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        削除中...
-                      </>
-                    ) : (
-                      'リセット'
-                    )}
-                  </AlertDialogAction>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
+            <div className="flex items-center gap-2">
+              <AlertDialog>
+                <AlertDialogTrigger asChild>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    disabled={isResetting || !hasDocuments}
+                    className="h-auto px-3 py-1"
+                  >
+                    <Trash2 className="mr-2 h-3 w-3" />
+                    <span className="text-sm">全ファイル削除</span>
+                    {isResetting && <Loader2 className="ml-2 h-3 w-3 animate-spin" />}
+                  </Button>
+                </AlertDialogTrigger>
+                <AlertDialogContent>
+                  <AlertDialogHeader>
+                    <AlertDialogTitle>全ファイルを削除</AlertDialogTitle>
+                    <AlertDialogDescription>
+                      アップロードしたすべてのファイルを削除しますか？
+                      <br />
+                      <br />
+                      削除されるもの：
+                      <br />
+                      • PDFやパワーポイントファイル
+                      <br />
+                      • 変換された画像
+                      <br />
+                      • 検索用のデータ
+                      <br />
+                      <br />
+                      削除後、ページが自動的に更新され、新しくファイルをアップロードできます。
+                      <br />
+                      <br />
+                      <span className="text-destructive font-medium">この操作は元に戻せません。</span>
+                    </AlertDialogDescription>
+                  </AlertDialogHeader>
+                  <AlertDialogFooter>
+                    <AlertDialogCancel>キャンセル</AlertDialogCancel>
+                    <AlertDialogAction onClick={resetSession} disabled={isResetting}>
+                      {isResetting ? (
+                        <>
+                          <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                          削除中...
+                        </>
+                      ) : (
+                        '全ファイル削除'
+                      )}
+                    </AlertDialogAction>
+                  </AlertDialogFooter>
+                </AlertDialogContent>
+              </AlertDialog>
+            </div>
           </div>
         </div>
       </header>

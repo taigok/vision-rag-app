@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 interface SessionContextType {
   sessionId: string;
   resetSession: () => void;
+  clearSession: () => Promise<void>;
   isResetting: boolean;
 }
 
@@ -67,6 +68,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     console.log('New session created on page load:', newId);
   }, []); // Only run once on mount
 
+  const clearSession = async () => {
+    if (isResetting) return;
+    
+    setIsResetting(true);
+    
+    try {
+      // Clean up current session files
+      await cleanupSessionFiles(sessionId);
+      setIsResetting(false);
+    } catch (error) {
+      console.error('Session clear failed:', error);
+      setIsResetting(false);
+      toast.error('セッションクリアに失敗しました');
+    }
+  };
+
   const resetSession = async () => {
     if (isResetting) return;
     
@@ -93,6 +110,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     <SessionContext.Provider value={{ 
       sessionId, 
       resetSession, 
+      clearSession,
       isResetting
     }}>
       {children}
