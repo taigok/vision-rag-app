@@ -7,7 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { ChevronLeft, ChevronRight, ImageIcon, AlertCircle } from 'lucide-react';
 import { SampleDocument } from '@/lib/sample-documents';
-import { getUrl } from 'aws-amplify/storage';
+import { getUrl, list } from 'aws-amplify/storage';
 
 interface SampleDocumentViewerProps {
   document: SampleDocument;
@@ -32,27 +32,41 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
       const imageUrls: string[] = [];
       const errors: string[] = [];
       
-      // サンプル画像のロード (固定のファイル名パターンを使用)
-      // 実際のファイル名: 6e8e7bdd-70bc-49a2-a9c7-0ef7c101d169-page0001.png
-      for (let i = 1; i <= document.imageCount; i++) {
-        try {
-          const pageNum = i.toString().padStart(4, '0');
-          const imageKey = `${document.basePath}/images/6e8e7bdd-70bc-49a2-a9c7-0ef7c101d169-page${pageNum}.png`;
-          const result = await getUrl({
-            path: imageKey,
-            options: {
-              validateObjectExistence: false,
-              expiresIn: 3600,
-            },
-          });
-          
-          const url = result.url.toString();
-          imageUrls.push(url);
-        } catch (err: any) {
-          console.warn(`Failed to load image ${i} for ${document.basePath}:`, err);
-          errors.push(`ページ${i}`);
-          // 画像が見つからない場合はスキップ
+      // サンプル画像を動的に取得
+      try {
+        const imagesResult = await list({
+          path: `${document.basePath}/images/`,
+          options: {
+            listAll: true
+          }
+        });
+        
+        // PNGファイルのみフィルタして、ファイル名でソート
+        const imageFiles = imagesResult.items
+          .filter(item => item.path && item.path.endsWith('.png'))
+          .sort((a, b) => a.path!.localeCompare(b.path!));
+        
+        for (const imageFile of imageFiles) {
+          try {
+            const result = await getUrl({
+              path: imageFile.path!,
+              options: {
+                validateObjectExistence: false,
+                expiresIn: 3600,
+              },
+            });
+            
+            const url = result.url.toString();
+            imageUrls.push(url);
+          } catch (err: any) {
+            console.warn(`Failed to load image ${imageFile.path}:`, err);
+            errors.push(imageFile.path!);
+          }
         }
+      } catch (listErr: any) {
+        console.error('Failed to list images:', listErr);
+        setError(`画像一覧の取得に失敗しました: ${listErr.message}`);
+        return;
       }
       
       if (imageUrls.length === 0) {
@@ -128,8 +142,11 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
-          <ImageIcon className="h-4 w-4" />
+        <CardTitle className="flex items-center gap-3">
+          <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+            2
+          </div>
+          <ImageIcon className="h-5 w-5" />
           文書プレビュー
         </CardTitle>
         <CardDescription>

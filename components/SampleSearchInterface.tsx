@@ -37,6 +37,101 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [modalImageLoading, setModalImageLoading] = useState(false);
 
+  const getSampleQuestions = (documentId: string): string[] => {
+    switch (documentId) {
+      case 'daiwa-securities-plan':
+        return [
+          '売上目標はいくら？',
+          '主要戦略は何？',
+          'ROEの目標値は？',
+          '新規事業の計画は？',
+          '海外戦略について教えて',
+          'デジタル化の取り組みは？'
+        ];
+      default:
+        return [
+          '主な内容は？',
+          '重要なポイントは？',
+          '目標や計画は？'
+        ];
+    }
+  };
+
+  const handleSampleQuestionClick = async (question: string) => {
+    setQuery(question);
+    
+    // 直接検索を実行
+    setLoading(true);
+    setError(null);
+    setResults(null);
+
+    try {
+      const apiEndpoint = outputs.custom?.API?.endpoint;
+      if (!apiEndpoint) {
+        throw new Error('API endpoint not configured');
+      }
+
+      const response = await fetch(`${apiEndpoint}search`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json',
+        },
+        body: JSON.stringify({
+          query: question.trim(),
+          topK: 3,
+          sessionId: `sample-${selectedDocument.id}`, // サンプル文書用のセッションID
+        }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Search failed: ${response.status} ${response.statusText} - ${errorText}`);
+      }
+
+      const data: SearchResult = await response.json();
+      setResults(data);
+
+      // Load source images
+      const imageUrls: {[key: string]: string} = {};
+      const loadingKeys = new Set(data.sources.map(s => s.key));
+      setLoadingImages(loadingKeys);
+      
+      for (const source of data.sources) {
+        try {
+          const imageUrl = await getUrl({
+            path: source.key,
+            options: {
+              validateObjectExistence: false,
+              expiresIn: 3600, // 1 hour
+            },
+          });
+          imageUrls[source.key] = imageUrl.url.toString();
+        } catch (imageError) {
+          console.error('Failed to get source image URL:', imageError);
+          // Remove from loading state if failed
+          setLoadingImages(prev => {
+            const next = new Set(prev);
+            next.delete(source.key);
+            return next;
+          });
+        }
+      }
+      setSourceImages(imageUrls);
+    } catch (err) {
+      console.error('Search error:', err);
+      
+      if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
+        setError('Network error: Unable to connect to the search API. Please check if the backend is deployed.');
+      } else {
+        setError(err instanceof Error ? err.message : 'An unexpected error occurred');
+      }
+      toast.error('検索中にエラーが発生しました');
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!query.trim()) return;
@@ -119,6 +214,25 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
         <h3 className="font-medium text-sm text-muted-foreground mb-1">選択中の文書</h3>
         <p className="font-semibold">{selectedDocument.name}</p>
         <p className="text-sm text-muted-foreground">{selectedDocument.description}</p>
+      </div>
+
+      {/* Sample Questions */}
+      <div className="mb-4">
+        <p className="text-sm text-foreground/70 mb-2">サンプル質問:</p>
+        <div className="flex flex-wrap gap-2">
+          {getSampleQuestions(selectedDocument.id).map((question, index) => (
+            <Button
+              key={index}
+              variant="outline"
+              size="sm"
+              onClick={() => handleSampleQuestionClick(question)}
+              disabled={loading}
+              className="text-xs"
+            >
+              {question}
+            </Button>
+          ))}
+        </div>
       </div>
 
       {/* Search Form */}
