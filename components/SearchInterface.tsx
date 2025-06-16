@@ -11,6 +11,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface SearchInterfaceProps {
   isIndexReady?: boolean;
@@ -36,6 +37,8 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
   const { sessionId } = useSession();
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [sourceImages, setSourceImages] = useState<{[key: string]: string}>({});
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [modalImageLoading, setModalImageLoading] = useState(false);
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -82,6 +85,9 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
 
       // Load source images
       const imageUrls: {[key: string]: string} = {};
+      const loadingKeys = new Set(data.sources.map(s => s.key));
+      setLoadingImages(loadingKeys);
+      
       for (const source of data.sources) {
         try {
           const imageUrl = await getUrl({
@@ -94,6 +100,12 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
           imageUrls[source.key] = imageUrl.url.toString();
         } catch (imageError) {
           console.error('Failed to get source image URL:', imageError);
+          // Remove from loading state if failed
+          setLoadingImages(prev => {
+            const next = new Set(prev);
+            next.delete(source.key);
+            return next;
+          });
         }
       }
       setSourceImages(imageUrls);
@@ -213,6 +225,7 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
                       className="p-3 rounded-lg border bg-card cursor-pointer hover:bg-accent transition-colors"
                       onClick={() => {
                         if (imageUrl) {
+                          setModalImageLoading(true);
                           setSelectedImage(imageUrl);
                         }
                       }}
@@ -222,14 +235,34 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
                         <div className="flex-shrink-0">
                           {imageUrl ? (
                             <div className="relative w-12 h-16 rounded border bg-muted overflow-hidden">
-                              <img
-                                src={imageUrl}
-                                alt={`Page ${pageNum}`}
-                                className="w-full h-full object-cover"
-                              />
-                              <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
-                                <ZoomIn className="h-3 w-3 text-white" />
-                              </div>
+                              {loadingImages.has(source.key) ? (
+                                <Skeleton className="w-full h-full" />
+                              ) : (
+                                <>
+                                  <img
+                                    src={imageUrl}
+                                    alt={`Page ${pageNum}`}
+                                    className="w-full h-full object-cover"
+                                    onLoad={() => {
+                                      setLoadingImages(prev => {
+                                        const next = new Set(prev);
+                                        next.delete(source.key);
+                                        return next;
+                                      });
+                                    }}
+                                    onError={() => {
+                                      setLoadingImages(prev => {
+                                        const next = new Set(prev);
+                                        next.delete(source.key);
+                                        return next;
+                                      });
+                                    }}
+                                  />
+                                  <div className="absolute inset-0 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity bg-black/30">
+                                    <ZoomIn className="h-3 w-3 text-white" />
+                                  </div>
+                                </>
+                              )}
                             </div>
                           ) : (
                             <div className="w-12 h-16 rounded border bg-muted flex items-center justify-center">
@@ -274,11 +307,21 @@ export default function SearchInterface({ isIndexReady = false, hasDocuments = f
         <DialogContent className="max-w-5xl max-h-[90vh] p-2">
           <DialogTitle className="sr-only">ソース文書画像の拡大表示</DialogTitle>
           {selectedImage && (
-            <img
-              src={selectedImage}
-              alt="Document page"
-              className="max-w-full max-h-[85vh] object-contain rounded"
-            />
+            <div className="relative">
+              {modalImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted rounded">
+                  <Skeleton className="w-full h-[85vh]" />
+                </div>
+              )}
+              <img
+                src={selectedImage}
+                alt="Document page"
+                className="max-w-full max-h-[85vh] object-contain rounded"
+                onLoad={() => setModalImageLoading(false)}
+                onError={() => setModalImageLoading(false)}
+                style={{ display: modalImageLoading ? 'none' : 'block' }}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

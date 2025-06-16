@@ -128,8 +128,8 @@ function HomeContent() {
           </TabsList>
 
           {/* アップロード・検索タブ */}
-          <TabsContent value="upload" className="space-y-8">
-            {/* Step 1: Upload & Document Management */}
+          <TabsContent value="upload" className="space-y-6">
+            {/* Step 1: Upload */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
@@ -137,57 +137,52 @@ function HomeContent() {
                     1
                   </div>
                   <Upload className="h-5 w-5" />
-                  文書のアップロード・管理
+                  文書アップロード
                 </CardTitle>
                 <CardDescription>
-                  PDFやPowerPointファイル（50MBまで・1ファイル制限）をアップロードして、文書ライブラリを表示
+                  PDFやPowerPointファイル（50MBまで・1ファイル制限）をアップロード
                 </CardDescription>
               </CardHeader>
               <CardContent>
-                <div className="grid lg:grid-cols-2 gap-8">
-                  {/* Upload Area */}
-                  <div>
-                    <h3 className="text-lg font-semibold mb-4 flex items-center gap-2">
-                      <Upload className="h-4 w-4" />
-                      新しい文書をアップロード
-                    </h3>
-                    <FileUpload onUploadComplete={handleUploadComplete} hasDocuments={hasDocuments} />
-                  </div>
-                  
-                  {/* Documents List */}
-                  <div>
-                    <div className="flex items-center justify-between mb-4">
-                      <h3 className="text-lg font-semibold flex items-center gap-2">
-                        <FileText className="h-4 w-4" />
-                        あなたの文書
-                      </h3>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setRefreshKey(prev => prev + 1)}
-                        title="更新"
-                      >
-                        <RefreshCw className="h-4 w-4" />
-                      </Button>
-                    </div>
-                    <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
-                  </div>
-                </div>
+                <FileUpload onUploadComplete={handleUploadComplete} hasDocuments={hasDocuments} />
               </CardContent>
             </Card>
 
-            {/* Step 2: Search Section */}
+            {/* Step 2: Image Conversion */}
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3">
                   <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
                     2
                   </div>
+                  <FileText className="h-5 w-5" />
+                  画像化・埋め込み処理
+                </CardTitle>
+                <CardDescription>
+                  PDF/PPTXをPNG画像に変換→画像からベクトル埋め込み生成→検索用インデックス作成
+                  <br />
+                  <span className="text-xs opacity-70">埋め込みモデル: Cohere V2</span>
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <DocumentList refreshTrigger={refreshKey} onIndexStatusChange={handleIndexStatusChange} />
+              </CardContent>
+            </Card>
+
+            {/* Step 3: Search Section */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-3">
+                  <div className="flex items-center justify-center w-8 h-8 bg-primary text-primary-foreground rounded-full text-sm font-semibold">
+                    3
+                  </div>
                   <Search className="h-5 w-5" />
                   文書を検索
                 </CardTitle>
                 <CardDescription>
                   アップロードした文書について質問して、AIによる回答を取得
+                  <br />
+                  <span className="text-xs opacity-70">応答生成モデル: Gemini 1.5 Pro</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -237,6 +232,8 @@ function HomeContent() {
                     </CardTitle>
                     <CardDescription>
                       選択したサンプル文書について質問して、AIによる回答を取得
+                      <br />
+                      <span className="text-xs opacity-70">応答生成モデル: Gemini 1.5 Pro</span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

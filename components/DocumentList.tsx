@@ -10,6 +10,7 @@ import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { FileText, FileIcon, RefreshCw, Trash2, AlertCircle, Image, ZoomIn, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { useSession } from '@/contexts/SessionContext';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Document {
   key: string;
@@ -35,6 +36,8 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
   const [isIndexReady, setIsIndexReady] = useState(false);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
   const [deletingFiles, setDeletingFiles] = useState<Set<string>>(new Set());
+  const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
+  const [modalImageLoading, setModalImageLoading] = useState(false);
   const { sessionId } = useSession();
 
   const fetchDocuments = async () => {
@@ -94,6 +97,9 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
               })
           ).then(results => results.filter(Boolean) as ImageFile[]);
           
+          // Set loading state for all images initially
+          const imageKeys = new Set(imageFiles.map(img => img.key));
+          setLoadingImages(imageKeys);
           setImages(imageFiles);
         } catch (imageError) {
           console.log('No images found yet');
@@ -373,20 +379,43 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
               <div
                 key={image.key}
                 className="relative flex-shrink-0 w-24 h-24 sm:w-32 sm:h-32 rounded-lg border bg-muted cursor-pointer hover:shadow-md transition-all group overflow-hidden"
-                onClick={() => setSelectedImage(image.url)}
+                onClick={() => {
+                  setModalImageLoading(true);
+                  setSelectedImage(image.url);
+                }}
               >
-                <img
-                  src={image.url}
-                  alt={`Page ${index + 1}`}
-                  className="w-full h-full object-cover rounded-lg"
-                  loading="lazy"
-                />
-                <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
-                  <ZoomIn className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
-                </div>
-                <div className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-1 py-0.5 rounded text-center min-w-4">
-                  {index + 1}
-                </div>
+                {loadingImages.has(image.key) ? (
+                  <Skeleton className="w-full h-full rounded-lg" />
+                ) : (
+                  <>
+                    <img
+                      src={image.url}
+                      alt={`Page ${index + 1}`}
+                      className="w-full h-full object-cover rounded-lg"
+                      loading="lazy"
+                      onLoad={() => {
+                        setLoadingImages(prev => {
+                          const next = new Set(prev);
+                          next.delete(image.key);
+                          return next;
+                        });
+                      }}
+                      onError={() => {
+                        setLoadingImages(prev => {
+                          const next = new Set(prev);
+                          next.delete(image.key);
+                          return next;
+                        });
+                      }}
+                    />
+                    <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity bg-black/20 rounded-lg">
+                      <ZoomIn className="h-4 w-4 sm:h-6 sm:w-6 text-white" />
+                    </div>
+                    <div className="absolute bottom-1 left-1 text-xs bg-black/70 text-white px-1 py-0.5 rounded text-center min-w-4">
+                      {index + 1}
+                    </div>
+                  </>
+                )}
               </div>
             ))}
           </div>
@@ -398,11 +427,21 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
         <DialogContent className="max-w-4xl w-full">
           <DialogTitle className="sr-only">文書画像の拡大表示</DialogTitle>
           {selectedImage && (
-            <img
-              src={selectedImage}
-              alt="Document page"
-              className="w-full h-auto max-h-[80vh] object-contain"
-            />
+            <div className="relative">
+              {modalImageLoading && (
+                <div className="absolute inset-0 flex items-center justify-center bg-muted rounded">
+                  <Skeleton className="w-full h-[80vh]" />
+                </div>
+              )}
+              <img
+                src={selectedImage}
+                alt="Document page"
+                className="w-full h-auto max-h-[80vh] object-contain"
+                onLoad={() => setModalImageLoading(false)}
+                onError={() => setModalImageLoading(false)}
+                style={{ display: modalImageLoading ? 'none' : 'block' }}
+              />
+            </div>
           )}
         </DialogContent>
       </Dialog>

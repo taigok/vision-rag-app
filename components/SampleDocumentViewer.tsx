@@ -18,6 +18,7 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [imageLoading, setImageLoading] = useState(false);
 
   useEffect(() => {
     loadSampleImages();
@@ -59,6 +60,7 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
       } else {
         setImages(imageUrls);
         setCurrentImageIndex(0);
+        setImageLoading(true); // Set loading state for the first image
         
         // 一部の画像が見つからない場合の警告
         if (errors.length > 0) {
@@ -74,10 +76,12 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
   };
 
   const nextImage = () => {
+    setImageLoading(true);
     setCurrentImageIndex((prev) => (prev + 1) % images.length);
   };
 
   const prevImage = () => {
+    setImageLoading(true);
     setCurrentImageIndex((prev) => (prev - 1 + images.length) % images.length);
   };
 
@@ -136,10 +140,18 @@ export default function SampleDocumentViewer({ document }: SampleDocumentViewerP
         <div className="space-y-4">
           {/* 画像表示エリア */}
           <div className="relative">
+            {imageLoading && (
+              <div className="absolute inset-0 flex items-center justify-center bg-muted rounded-lg">
+                <Skeleton className="w-full h-96" />
+              </div>
+            )}
             <img
               src={images[currentImageIndex]}
               alt={`${document.name} - ページ ${currentImageIndex + 1}`}
               className="w-full h-auto max-h-96 object-contain border rounded-lg"
+              onLoad={() => setImageLoading(false)}
+              onError={() => setImageLoading(false)}
+              style={{ display: imageLoading ? 'none' : 'block' }}
             />
           </div>
 
