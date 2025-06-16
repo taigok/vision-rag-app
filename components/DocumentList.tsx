@@ -288,45 +288,52 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
 
   return (
     <div className="w-full">
-      <div className="space-y-2">
-        {documents.map((doc) => (
-          <div key={doc.key} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
-            <div className="flex items-center space-x-3">
-              <div className="flex-shrink-0">
-                {doc.key.endsWith('.pdf') ? (
-                  <FileText className="w-6 h-6 text-red-500" />
-                ) : (
-                  <FileIcon className="w-6 h-6 text-orange-500" />
-                )}
-              </div>
-              <div>
-                <p className="font-medium text-sm">
-                  {doc.key.split('/').pop() || doc.key}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
-                </p>
-              </div>
-            </div>
-              
-              <AlertDialog>
-                <AlertDialogTrigger asChild>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-destructive hover:text-destructive"
-                    disabled={deletingFiles.has(doc.key)}
-                  >
-                    {deletingFiles.has(doc.key) ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
+      <div className="grid lg:grid-cols-2 gap-6">
+        {/* Documents Section */}
+        <div>
+          <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+            <FileText className="h-4 w-4" />
+            アップロード済み文書
+          </h3>
+          <div className="space-y-2">
+            {documents.map((doc) => (
+              <div key={doc.key} className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-accent/50 transition-colors">
+                <div className="flex items-center space-x-3">
+                  <div className="flex-shrink-0">
+                    {doc.key.endsWith('.pdf') ? (
+                      <FileText className="w-6 h-6 text-red-500" />
                     ) : (
-                      <Trash2 className="h-4 w-4" />
+                      <FileIcon className="w-6 h-6 text-orange-500" />
                     )}
-                  </Button>
-                </AlertDialogTrigger>
-                <AlertDialogContent>
-                  <AlertDialogHeader>
-                    <AlertDialogTitle>ファイルを削除</AlertDialogTitle>
+                  </div>
+                  <div>
+                    <p className="font-medium text-sm">
+                      {doc.key.split('/').pop() || doc.key}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {formatFileSize(doc.size)} • {formatDate(doc.lastModified)}
+                    </p>
+                  </div>
+                </div>
+                  
+                  <AlertDialog>
+                    <AlertDialogTrigger asChild>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-destructive hover:text-destructive"
+                        disabled={deletingFiles.has(doc.key)}
+                      >
+                        {deletingFiles.has(doc.key) ? (
+                          <Loader2 className="h-4 w-4 animate-spin" />
+                        ) : (
+                          <Trash2 className="h-4 w-4" />
+                        )}
+                      </Button>
+                    </AlertDialogTrigger>
+                    <AlertDialogContent>
+                      <AlertDialogHeader>
+                        <AlertDialogTitle>ファイルを削除</AlertDialogTitle>
                     <AlertDialogDescription>
                       <strong>「{doc.key.split('/').pop() || doc.key}」</strong>を削除してもよろしいですか？
                       <br />
@@ -363,19 +370,20 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
                   </AlertDialogFooter>
                 </AlertDialogContent>
               </AlertDialog>
+              </div>
+            ))}
           </div>
-        ))}
-      </div>
+        </div>
 
-      {/* Images Gallery */}
-      {images.length > 0 && (
-        <div className="mt-6">
-          <h4 className="text-sm font-medium mb-3 flex items-center gap-2">
-            <Image className="h-4 w-4" />
-            変換された画像 ({images.length}枚)
-          </h4>
+        {/* Images Gallery */}
+        {(images.length > 0 || (documents.length > 0 && !isIndexReady)) && (
+          <div>
+            <h3 className="text-lg font-medium mb-3 flex items-center gap-2">
+              <Image className="h-4 w-4" />
+              変換された画像 {loadingImages.size === 0 && images.length > 0 ? `(${images.length}枚)` : '(処理中...)'}
+            </h3>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin scrollbar-thumb-gray-400 scrollbar-track-gray-100">
-            {images.map((image, index) => (
+            {images.length > 0 ? images.map((image, index) => (
               <div
                 key={image.key}
                 className="relative flex-shrink-0 w-24 h-24 sm:w-32 sm:h-32 rounded-lg border bg-muted cursor-pointer hover:shadow-md transition-all group overflow-hidden"
@@ -417,10 +425,21 @@ export default function DocumentList({ refreshTrigger, onIndexStatusChange }: Do
                   </>
                 )}
               </div>
-            ))}
+            )) : (
+              // Show skeleton placeholders when documents exist but images are still processing
+              Array.from({ length: 3 }).map((_, index) => (
+                <div
+                  key={`skeleton-${index}`}
+                  className="flex-shrink-0 w-24 h-24 sm:w-32 sm:h-32 rounded-lg border bg-muted"
+                >
+                  <Skeleton className="w-full h-full rounded-lg" />
+                </div>
+              ))
+            )}
           </div>
-        </div>
-      )}
+          </div>
+        )}
+      </div>
 
       {/* Image Modal */}
       <Dialog open={!!selectedImage} onOpenChange={() => setSelectedImage(null)}>

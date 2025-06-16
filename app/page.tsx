@@ -161,7 +161,7 @@ function HomeContent() {
                 <CardDescription>
                   PDF/PPTXをPNG画像に変換→画像からベクトル埋め込み生成→検索用インデックス作成
                   <br />
-                  <span className="text-xs opacity-70">埋め込みモデル: Cohere V2</span>
+                  <span className="text-xs opacity-70">埋め込みモデル: Cohere Embed V4 (マルチモーダル)</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -180,9 +180,9 @@ function HomeContent() {
                   文書を検索
                 </CardTitle>
                 <CardDescription>
-                  アップロードした文書について質問して、AIによる回答を取得
+                  質問文をベクトル化→類似画像をベクトル検索→関連画像をAIが解析して回答生成
                   <br />
-                  <span className="text-xs opacity-70">応答生成モデル: Gemini 1.5 Pro</span>
+                  <span className="text-xs opacity-70">応答生成モデル: Gemini 2.5 Flash</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -231,9 +231,9 @@ function HomeContent() {
                       文書を検索
                     </CardTitle>
                     <CardDescription>
-                      選択したサンプル文書について質問して、AIによる回答を取得
+                      質問文をベクトル化→類似画像をベクトル検索→関連画像をAIが解析して回答生成
                       <br />
-                      <span className="text-xs opacity-70">応答生成モデル: Gemini 1.5 Pro</span>
+                      <span className="text-xs opacity-70">応答生成モデル: Gemini 2.5 Flash</span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
