@@ -21,13 +21,16 @@ The application follows a serverless pipeline architecture with session-based is
   - `sessions/{sessionId}/images/` - Converted PNG images from documents
   - `sessions/{sessionId}/index.faiss` - Unified Faiss index per session
   - `sessions/{sessionId}/metadata.json` - Session metadata with document mapping
+  - `samples/{documentId}/` - Pre-processed sample documents (permanent)
+    - Same structure as sessions but not auto-deleted
 
 ### Lambda Functions (Python 3.12)
 Convert-worker and embed-worker are in the `storage` resourceGroup to enable S3 triggers; search-router is in the `functions` resourceGroup:
 
-- **convert-worker**: Converts documents to images using PyMuPDF, triggers on `sessions/` prefix
+- **convert-worker**: Converts documents to images using PyMuPDF, triggers on `sessions/` and `samples/` prefixes
 - **embed-worker**: Generates embeddings with Cohere, maintains unified session indexes
 - **search-router**: Handles search queries via REST API, uses Gemini Vision Pro for responses
+  - Supports both regular sessions and sample documents (via `sample-{documentId}` session IDs)
 
 ### Frontend Technology Stack
 - **Next.js 15** with App Router and Turbopack for development
@@ -120,11 +123,12 @@ npm run dev          # Start frontend (separate terminal)
 ### Function Definitions
 All Lambda functions use custom CDK definitions with `defineFunction((scope) => ...)` pattern and `resourceGroupName: 'storage'` to prevent CloudFormation circular dependencies.
 
-### S3 Triggers and Permissions (Session-Based)
-S3 event triggers are configured in `amplify/backend.ts` for session-based architecture:
-- PDF/PPTX files in `sessions/` folder trigger convert-worker
-- PNG files in `sessions/` folder trigger embed-worker  
+### S3 Triggers and Permissions
+S3 event triggers are configured in `amplify/backend.ts`:
+- PDF/PPTX files in `sessions/` and `samples/` folders trigger convert-worker
+- PNG files in `sessions/` and `samples/` folders trigger embed-worker  
 - All functions use the same bucket with session-based organization
+- S3 lifecycle rule auto-deletes `sessions/` files after 1 day (samples are permanent)
 
 ### Container Image Deployment
 All Lambda functions use ECR container images instead of ZIP packages due to system dependencies:
@@ -193,3 +197,11 @@ Functions fail fast without fallback behavior for production reliability:
 - Session IDs stored in browser sessionStorage (tab-specific)
 - UI components handle session context via React Context
 - Upload and search operations include sessionId parameter
+- Tabbed interface separates user uploads from sample documents
+
+### Sample Documents Feature
+- Pre-processed documents available for immediate testing
+- Located in `sample-documents/` directory locally
+- Deployed to `samples/{documentId}/` in S3
+- Accessed via `sample-{documentId}` session IDs in search API
+- Currently includes: 大和証券中期経営計画 (Daiwa Securities Medium-term Management Plan)
