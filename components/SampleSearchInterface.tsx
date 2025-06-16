@@ -33,7 +33,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
   const [results, setResults] = useState<SearchResult | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [selectedImage, setSelectedImage] = useState<string | null>(null);
-  const [sourceImages, setSourceImages] = useState<{[key: string]: string}>({});
+  const [sourceImages, setSourceImages] = useState<{ [key: string]: string }>({});
   const [loadingImages, setLoadingImages] = useState<Set<string>>(new Set());
   const [modalImageLoading, setModalImageLoading] = useState(false);
 
@@ -41,11 +41,8 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
     switch (documentId) {
       case 'daiwa-securities-plan':
         return [
-          '売上目標はいくら？',
-          '主要戦略は何？',
-          'ROEの目標値は？',
-          '新規事業の計画は？',
-          '海外戦略について教えて',
+          '中計目標は？',
+          'グループ戦略は？',
           'デジタル化の取り組みは？'
         ];
       default:
@@ -59,7 +56,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
 
   const handleSampleQuestionClick = async (question: string) => {
     setQuery(question);
-    
+
     // 直接検索を実行
     setLoading(true);
     setError(null);
@@ -93,10 +90,10 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
       setResults(data);
 
       // Load source images
-      const imageUrls: {[key: string]: string} = {};
+      const imageUrls: { [key: string]: string } = {};
       const loadingKeys = new Set(data.sources.map(s => s.key));
       setLoadingImages(loadingKeys);
-      
+
       for (const source of data.sources) {
         try {
           const imageUrl = await getUrl({
@@ -120,7 +117,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
       setSourceImages(imageUrls);
     } catch (err) {
       console.error('Search error:', err);
-      
+
       if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to the search API. Please check if the backend is deployed.');
       } else {
@@ -168,10 +165,10 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
       setResults(data);
 
       // Load source images
-      const imageUrls: {[key: string]: string} = {};
+      const imageUrls: { [key: string]: string } = {};
       const loadingKeys = new Set(data.sources.map(s => s.key));
       setLoadingImages(loadingKeys);
-      
+
       for (const source of data.sources) {
         try {
           const imageUrl = await getUrl({
@@ -195,7 +192,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
       setSourceImages(imageUrls);
     } catch (err) {
       console.error('Search error:', err);
-      
+
       if (err instanceof TypeError && err.message.includes('Failed to fetch')) {
         setError('Network error: Unable to connect to the search API. Please check if the backend is deployed.');
       } else {
@@ -296,9 +293,9 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
                 {results.sources.map((source, index) => {
                   const pageMatch = source.key.match(/page[_-]?(\d+)\.png$/i);
                   const pageNum = pageMatch ? pageMatch[1] : (index + 1).toString();
-                  
+
                   const imageUrl = sourceImages[source.key];
-                  
+
                   return (
                     <div
                       key={index}
@@ -350,7 +347,7 @@ export default function SampleSearchInterface({ selectedDocument }: SampleSearch
                             </div>
                           )}
                         </div>
-                        
+
                         {/* Compact Document Info */}
                         <div className="flex-1 min-w-0">
                           <p className="text-sm font-medium truncate">
