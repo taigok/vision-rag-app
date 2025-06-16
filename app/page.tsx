@@ -51,11 +51,11 @@ function HomeContent() {
             <div className="flex items-center">
               <div>
                 <h1 className="text-2xl font-bold">Vision RAG</h1>
-                <p className="text-sm text-muted-foreground">PDFやパワポをアップロード→画像化・ベクトル化→質問すると関連画像をAIが参照して回答するデモアプリ</p>
+                <p className="text-sm text-foreground/80">文書を画像化 → ベクトル埋め込み → クロスモーダル検索 → Vision LLM による画像解析・回答生成の技術デモ</p>
               </div>
             </div>
             <div className="flex items-center gap-2">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-foreground/70">
                 セッション: {sessionId.split('-')[1] || sessionId.slice(0, 8)}
               </div>
               <AlertDialog>
@@ -116,12 +116,12 @@ function HomeContent() {
       {/* Main Content */}
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-6">
         <Tabs defaultValue="upload" className="w-full">
-          <TabsList>
-            <TabsTrigger value="upload" className="flex items-center gap-2">
+          <TabsList className="bg-muted/80">
+            <TabsTrigger value="upload" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <Upload className="h-4 w-4" />
               自分の文書をアップロード
             </TabsTrigger>
-            <TabsTrigger value="samples" className="flex items-center gap-2">
+            <TabsTrigger value="samples" className="flex items-center gap-2 data-[state=active]:bg-background data-[state=active]:shadow-sm">
               <BookOpen className="h-4 w-4" />
               サンプル文書を試す
             </TabsTrigger>
@@ -161,7 +161,7 @@ function HomeContent() {
                 <CardDescription>
                   PDF/PPTXをPNG画像に変換→画像からベクトル埋め込み生成→検索用インデックス作成
                   <br />
-                  <span className="text-xs opacity-70">埋め込みモデル: Cohere Embed V4 (マルチモーダル)</span>
+                  <span className="text-xs text-foreground/60">埋め込みモデル: Cohere Embed V4 (マルチモーダル)</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -182,7 +182,7 @@ function HomeContent() {
                 <CardDescription>
                   質問文をベクトル化→類似画像をベクトル検索→関連画像をAIが解析して回答生成
                   <br />
-                  <span className="text-xs opacity-70">応答生成モデル: Gemini 2.5 Flash</span>
+                  <span className="text-xs text-foreground/60">応答生成モデル: Gemini 2.5 Flash</span>
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -233,7 +233,7 @@ function HomeContent() {
                     <CardDescription>
                       質問文をベクトル化→類似画像をベクトル検索→関連画像をAIが解析して回答生成
                       <br />
-                      <span className="text-xs opacity-70">応答生成モデル: Gemini 2.5 Flash</span>
+                      <span className="text-xs text-foreground/60">応答生成モデル: Gemini 2.5 Flash</span>
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
